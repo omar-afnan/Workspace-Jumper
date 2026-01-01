@@ -10,20 +10,14 @@ interface WorkspaceSession {
 
 export function activate(context: vscode.ExtensionContext) {
 
+	saveWorkspaceSession(context);
+
 	const disposable = vscode.commands.registerCommand(
 		'workspace-jumper.jump',
-		() => {
-			saveWorkspaceSession(context);
-			jumpToWorkspace(context);
-		}
+		() => jumpToWorkspace(context)
 	);
 
 	context.subscriptions.push(disposable);
-
-	// Auto-save workspace when files are opened/closed
-	vscode.window.onDidChangeActiveTextEditor(() => {
-		saveWorkspaceSession(context);
-	});
 }
 
 function saveWorkspaceSession(context: vscode.ExtensionContext) {
@@ -33,15 +27,10 @@ function saveWorkspaceSession(context: vscode.ExtensionContext) {
 	const folderPath = folders[0].uri.fsPath;
 	const folderName = path.basename(folderPath);
 
-	const openFiles: string[] = [];
-	vscode.window.tabGroups.all.forEach(group => {
-		group.tabs.forEach(tab => {
-			const input = tab.input as any;
-			if (input?.uri?.fsPath) {
-				openFiles.push(input.uri.fsPath);
-			}
-		});
-	});
+	const openFiles = vscode.window.tabGroups.all
+		.flatMap(group => group.tabs)
+		.map(tab => (tab.input as any)?.uri?.fsPath)
+		.filter(Boolean);
 
 	const session: WorkspaceSession = {
 		name: folderName,

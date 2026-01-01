@@ -9,13 +9,15 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onCommand:workspace-jumper.jump"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "workspace-jumper.helloWorld",
-        "title": "Hello World"
+        "command": "workspace-jumper.jump",
+        "title": "Jump to Workspace"
       }
     ]
   },
