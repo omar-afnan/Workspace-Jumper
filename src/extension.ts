@@ -4,77 +4,73 @@ import * as path from 'path';
 interface WorkspaceSession {
 	name: string;
 	path: string;
-	openFiles: string[];
 	lastOpened: string;
 }
 
+const STORAGE_KEY = 'workspace-jumper.workspaces';
+
 export function activate(context: vscode.ExtensionContext) {
+	console.log('workspace-jumper activated');
 
 	const disposable = vscode.commands.registerCommand(
 		'workspace-jumper.jump',
-		() => {
-			saveWorkspaceSession(context);
-			jumpToWorkspace(context);
+		async () => {
+			saveCurrentWorkspace(context);
+			await showWorkspacePicker(context);
 		}
 	);
 
 	context.subscriptions.push(disposable);
-
-	// Auto-save workspace when files are opened/closed
-	vscode.window.onDidChangeActiveTextEditor(() => {
-		saveWorkspaceSession(context);
-	});
 }
 
-function saveWorkspaceSession(context: vscode.ExtensionContext) {
+function saveCurrentWorkspace(context: vscode.ExtensionContext) {
 	const folders = vscode.workspace.workspaceFolders;
 	if (!folders || folders.length === 0) return;
 
 	const folderPath = folders[0].uri.fsPath;
 	const folderName = path.basename(folderPath);
 
-	const openFiles: string[] = [];
-	vscode.window.tabGroups.all.forEach(group => {
-		group.tabs.forEach(tab => {
-			const input = tab.input as any;
-			if (input?.uri?.fsPath) {
-				openFiles.push(input.uri.fsPath);
-			}
-		});
-	});
+	const workspaces =
+		context.globalState.get<WorkspaceSession[]>(STORAGE_KEY, []);
 
-	const session: WorkspaceSession = {
+	// Remove duplicate entry if exists
+	const filtered = workspaces.filter(ws => ws.path !== folderPath);
+
+	filtered.unshift({
 		name: folderName,
 		path: folderPath,
-		openFiles,
 		lastOpened: new Date().toISOString()
-	};
+	});
 
-	context.globalState.update('lastWorkspace', session);
+	context.globalState.update(STORAGE_KEY, filtered);
 }
 
-async function jumpToWorkspace(context: vscode.ExtensionContext) {
-	const session = context.globalState.get<WorkspaceSession>('lastWorkspace');
+async function showWorkspacePicker(context: vscode.ExtensionContext) {
+	const workspaces =
+		context.globalState.get<WorkspaceSession[]>(STORAGE_KEY, []);
 
-	if (!session) {
-		vscode.window.showInformationMessage('No workspace saved.');
+	if (workspaces.length === 0) {
+		vscode.window.showInformationMessage('No saved workspaces yet.');
 		return;
 	}
 
-	const choice = await vscode.window.showInformationMessage(
-		'Resume previous workspace?',
-		session.name,
-		'Cancel'
+	const pick = await vscode.window.showQuickPick(
+		workspaces.map(ws => ({
+			label: ws.name,
+			description: ws.path
+		})),
+		{
+			placeHolder: 'Select a workspace to open'
+		}
 	);
 
-	if (choice === session.name) {
-		await vscode.commands.executeCommand(
-			'vscode.openFolder',
-			vscode.Uri.file(session.path),
-			false
-		);
-	}
+	if (!pick) return;
 
+	await vscode.commands.executeCommand(
+		'vscode.openFolder',
+		vscode.Uri.file(pick.description!),
+		false
+	);
 }
 
 export function deactivate() { }
