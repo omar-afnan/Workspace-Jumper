@@ -2,7 +2,8 @@
   "name": "workspace-jumper",
   "displayName": "WorkSnap",
   "description": "Resume and jump between VS Code workspaces",
-  "version": "0.0.1",
+  "version": "0.0.2",
+  "publisher": "omara",
   "engines": {
     "vscode": "^1.107.0"
   },
@@ -10,7 +11,8 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:workspace-jumper.jump"
+    "onCommand:workspace-jumper.jump",
+    "onStartupFinished"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -19,20 +21,33 @@
         "command": "workspace-jumper.jump",
         "title": "Jump to Workspace"
       }
+    ],
+    "menus": {
+      "statusBar/left": [
+        {
+          "command": "workspace-jumper.jump",
+          "group": "navigation"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "workspace-jumper.jump",
+        "key": "ctrl+shift+j",
+        "mac": "cmd+shift+j"
+      }
     ]
   },
   "scripts": {
     "compile": "tsc -p tsconfig.json",
     "watch": "tsc -w -p tsconfig.json",
     "pretest": "npm run compile",
-    "package": "vsce package",
-    "watch:esbuild": "npm run watch"
+    "package": "vsce package"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "@types/vscode": "^1.107.0",
-    "esbuild": "^0.27.1",
     "typescript": "^5.9.3"
   }
 }
