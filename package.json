@@ -1,17 +1,23 @@
 {
   "name": "workspace-jumper",
   "displayName": "WorkSnap",
-  "description": "Resume and jump between VS Code workspaces",
-  "version": "0.0.3",
-  "publisher": "Syed Muhammad Omar Afnan",
+  "description": "Privacy-focused workspace manager - encrypted storage, no network access",
+  "version": "1.0.0",
+  "publisher": "omara",
   "engines": {
     "vscode": "^1.107.0"
   },
   "categories": [
     "Other"
   ],
+  "keywords": [
+    "workspace",
+    "privacy",
+    "encrypted",
+    "secure",
+    "productivity"
+  ],
   "activationEvents": [
-    "onCommand:workspace-jumper.jump",
     "onStartupFinished"
   ],
   "main": "./dist/extension.js",
@@ -19,14 +25,74 @@
     "commands": [
       {
         "command": "workspace-jumper.jump",
-        "title": "Jump to Workspace"
+        "title": "Jump to Workspace",
+        "category": "WorkSnap"
+      },
+      {
+        "command": "workspace-jumper.editWorkspace",
+        "title": "Edit Workspace (Nickname/Sensitive)",
+        "category": "WorkSnap"
+      },
+      {
+        "command": "workspace-jumper.removeWorkspace",
+        "title": "Remove Workspace from History",
+        "category": "WorkSnap"
+      },
+      {
+        "command": "workspace-jumper.clearHistory",
+        "title": "Clear All Workspace History",
+        "category": "WorkSnap"
+      },
+      {
+        "command": "workspace-jumper.toggleSensitive",
+        "title": "Toggle Sensitive Flag on Current Workspace",
+        "category": "WorkSnap"
       }
     ],
+    "configuration": {
+      "title": "WorkSnap",
+      "properties": {
+        "worksnap.autoResumeEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically resume the last workspace when VS Code opens without a folder"
+        },
+        "worksnap.maxHistory": {
+          "type": "number",
+          "default": 10,
+          "minimum": 1,
+          "maximum": 50,
+          "description": "Maximum number of workspaces to keep in history"
+        }
+      }
+    },
     "menus": {
       "statusBar/left": [
         {
           "command": "workspace-jumper.jump",
           "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "workspace-jumper.jump",
+          "when": "true"
+        },
+        {
+          "command": "workspace-jumper.editWorkspace",
+          "when": "true"
+        },
+        {
+          "command": "workspace-jumper.removeWorkspace",
+          "when": "true"
+        },
+        {
+          "command": "workspace-jumper.clearHistory",
+          "when": "true"
+        },
+        {
+          "command": "workspace-jumper.toggleSensitive",
+          "when": "workspaceFolderCount > 0"
         }
       ]
     },
@@ -35,6 +101,11 @@
         "command": "workspace-jumper.jump",
         "key": "ctrl+alt+w",
         "mac": "cmd+alt+w"
+      },
+      {
+        "command": "workspace-jumper.toggleSensitive",
+        "key": "ctrl+alt+s",
+        "mac": "cmd+alt+s"
       }
     ]
   },
