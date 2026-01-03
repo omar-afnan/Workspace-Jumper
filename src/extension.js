@@ -144,6 +144,212 @@ function activate(context) {
         await toggleCurrentWorkspaceSensitive(context, secrets);
     });
     context.subscriptions.push(jumpCommand, editCommand, removeCommand, clearCommand, toggleSensitiveCommand);
+    // Register dashboard webview command (WorkSnap Dashboard)
+    context.subscriptions.push(vscode.commands.registerCommand('worksnap.openDashboard', () => {
+        openDashboard(context);
+    }));
+    // Register a sidebar view provider so the dashboard appears in the left Activity Bar
+    class WorkSnapViewProvider {
+        ctx;
+        constructor(ctx) {
+            this.ctx = ctx;
+        }
+        async resolveWebviewView(webviewView) {
+            webviewView.webview.options = { enableScripts: true };
+            const secrets = this.ctx.secrets;
+            const encryptionKey = await getEncryptionKey(secrets);
+            const workspaces = this.ctx.globalState.get(STORAGE_KEY, []);
+            const rows = workspaces.map(ws => {
+                const decrypted = decrypt(ws.encryptedPath, encryptionKey) || '';
+                return `
+					<div class="card">
+						<div class="title">${folderIcon()} ${escapeHtml(ws.nickname)} ${ws.isSensitive ? lockIcon() : ''}</div>
+						<div class="path">${escapeHtml(ws.nickname)}</div>
+						<div class="actions">
+							<button data-path="${encodeURIComponent(decrypted)}" onclick="resume(this)">${playIcon()} Resume</button>
+							<button onclick="edit('${ws.id}')">${editIcon()} Edit</button>
+							<button onclick="remove('${ws.id}')">${removeIcon()}</button>
+						</div>
+					</div>
+				`;
+            }).join('');
+            webviewView.webview.html = getDashboardHtml(webviewView.webview, this.ctx, rows);
+            webviewView.webview.onDidReceiveMessage(async (msg) => {
+                switch (msg.type) {
+                    case 'resume':
+                        vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(msg.path), false);
+                        break;
+                    case 'clear':
+                        await this.ctx.globalState.update(STORAGE_KEY, []);
+                        webviewView.webview.html = getDashboardHtml(webviewView.webview, this.ctx, '');
+                        break;
+                    case 'remove':
+                        {
+                            const list = this.ctx.globalState.get(STORAGE_KEY, []);
+                            const filtered = list.filter(w => w.id !== msg.id);
+                            await this.ctx.globalState.update(STORAGE_KEY, filtered);
+                            const newRows = filtered.map(ws => {
+                                const dec = decrypt(ws.encryptedPath, encryptionKey) || '';
+                                return `\n\t\t\t<div class="card">\n\t\t\t\t<div class="title">${folderIcon()} ${escapeHtml(ws.nickname)} ${ws.isSensitive ? lockIcon() : ''}</div>\n\t\t\t\t<div class="path">${escapeHtml(ws.nickname)}</div>\n\t\t\t\t<div class=\"actions\">\n\t\t\t\t\t<button data-path=\"${encodeURIComponent(dec)}\" onclick=\"resume(this)\">${playIcon()} Resume</button>\n\t\t\t\t\t<button onclick=\"edit('${ws.id}')\">${editIcon()} Edit</button>\n\t\t\t\t\t<button onclick=\"remove('${ws.id}')\">${removeIcon()}</button>\n\t\t\t\t</div>\n\t\t\t</div>`;
+                            }).join('');
+                            webviewView.webview.html = getDashboardHtml(webviewView.webview, this.ctx, newRows);
+                        }
+                        break;
+                }
+            });
+        }
+    }
+    const provider = new WorkSnapViewProvider(context);
+    context.subscriptions.push(vscode.window.registerWebviewViewProvider('worksnap.sidebarView', provider));
+    // Command to reveal the WorkSnap activity bar container (focus the left side view)
+    context.subscriptions.push(vscode.commands.registerCommand('worksnap.openSidebar', async () => {
+        try {
+            await vscode.commands.executeCommand('workbench.view.extension.worksnap');
+        }
+        catch (e) {
+            // fallback: try opening view directly
+            await vscode.commands.executeCommand('workbench.action.openView', 'worksnap.sidebarView');
+        }
+    }));
+    // Development-only: auto-reload Extension Development Host when source files change
+    if (context.extensionMode === vscode.ExtensionMode.Development) {
+        try {
+            // Watch common source folders and key files. Debounce to avoid rapid reloads.
+            const watcher = vscode.workspace.createFileSystemWatcher('**/{src,dist,media,package.json,tsconfig.json}/**/*');
+            let reloadTimer = undefined;
+            const scheduleReload = () => {
+                if (reloadTimer)
+                    clearTimeout(reloadTimer);
+                reloadTimer = setTimeout(async () => {
+                    try {
+                        vscode.window.showInformationMessage('WorkSnap: source changed — reloading Extension Development Host...');
+                        await vscode.commands.executeCommand('workbench.action.reloadWindow');
+                    }
+                    catch (e) {
+                        console.error('Auto-reload failed:', e);
+                    }
+                }, 600);
+            };
+            watcher.onDidChange(scheduleReload);
+            watcher.onDidCreate(scheduleReload);
+            watcher.onDidDelete(scheduleReload);
+            context.subscriptions.push(watcher);
+        }
+        catch (err) {
+            console.error('Failed to enable dev auto-reload watcher:', err);
+        }
+    }
+}
+// ============ DASHBOARD WEBVIEW ============
+async function openDashboard(context) {
+    const panel = vscode.window.createWebviewPanel('worksnapDashboard', 'WorkSnap', vscode.ViewColumn.One, { enableScripts: true, retainContextWhenHidden: true });
+    const secrets = context.secrets;
+    const encryptionKey = await getEncryptionKey(secrets);
+    const workspaces = context.globalState.get(STORAGE_KEY, []);
+    const rows = workspaces.map(ws => {
+        const decrypted = decrypt(ws.encryptedPath, encryptionKey) || '';
+        return `
+			<div class="card">
+				<div class="title">${folderIcon()} ${escapeHtml(ws.nickname)} ${ws.isSensitive ? lockIcon() : ''}</div>
+				<div class="path">${escapeHtml(ws.nickname)}</div>
+				<div class="actions">
+					<button data-path="${encodeURIComponent(decrypted)}" onclick="resume(this)">${playIcon()} Resume</button>
+					<button onclick="edit('${ws.id}')">${editIcon()} Edit</button>
+					<button onclick="remove('${ws.id}')">${removeIcon()}</button>
+				</div>
+			</div>
+		`;
+    }).join('');
+    panel.webview.html = getDashboardHtml(panel.webview, context, rows);
+    panel.webview.onDidReceiveMessage(async (msg) => {
+        switch (msg.type) {
+            case 'resume':
+                vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(msg.path), false);
+                break;
+            case 'clear':
+                await context.globalState.update(STORAGE_KEY, []);
+                panel.webview.html = getDashboardHtml(panel.webview, context, '');
+                break;
+            case 'remove':
+                {
+                    const list = context.globalState.get(STORAGE_KEY, []);
+                    const filtered = list.filter(w => w.id !== msg.id);
+                    await context.globalState.update(STORAGE_KEY, filtered);
+                    const newRows = filtered.map(ws => {
+                        const dec = decrypt(ws.encryptedPath, encryptionKey) || '';
+                        return `\n\t\t\t<div class="card">\n\t\t\t\t<div class="title">${folderIcon()} ${escapeHtml(ws.nickname)} ${ws.isSensitive ? lockIcon() : ''}</div>\n\t\t\t\t<div class="path">${escapeHtml(ws.nickname)}</div>\n\t\t\t\t<div class=\"actions\">\n\t\t\t\t\t<button data-path=\"${encodeURIComponent(dec)}\" onclick=\"resume(this)\">${playIcon()} Resume</button>\n\t\t\t\t\t<button onclick=\"edit('${ws.id}')\">${editIcon()} Edit</button>\n\t\t\t\t\t<button onclick=\"remove('${ws.id}')\">${removeIcon()}</button>\n\t\t\t\t</div>\n\t\t\t</div>`;
+                    }).join('');
+                    panel.webview.html = getDashboardHtml(panel.webview, context, newRows);
+                }
+                break;
+        }
+    });
+}
+function getDashboardHtml(webview, context, rows) {
+    return `<!DOCTYPE html>
+	<html>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<style>
+			body { font-family: sans-serif; background: #0f172a; color: #e5e7eb; padding: 16px; }
+			h2 { margin: 0 0 6px 0 }
+			.card { background: #1e293b; padding: 12px; margin-bottom: 10px; border-radius: 10px; }
+			.title { font-weight: 600; margin-bottom: 4px }
+			.path { color: #94a3b8; font-size: 12px; margin-bottom: 8px }
+			.actions { display: flex; gap: 8px }
+			button { background: #3b82f6; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer }
+			.footer { margin-top: 12px; display:flex; gap:10px }
+			.small { background: #334155; padding:8px 10px; border-radius:8px }
+		</style>
+	</head>
+	<body>
+		<h2>🧭 WorkSnap</h2>
+		<p>Jump between workspaces instantly</p>
+		${rows || '<p>No workspaces saved.</p>'}
+		<div class="footer">
+			<button class="small" onclick="addCurrent()">➕ Add Current Workspace</button>
+			<button class="small" onclick="clearAll()">🧹 Clear History</button>
+		</div>
+		<script>
+			const vscode = acquireVsCodeApi();
+			function resume(el) {
+				const p = decodeURIComponent(el.getAttribute('data-path'));
+				vscode.postMessage({ type: 'resume', path: p });
+			}
+			function clearAll() { vscode.postMessage({ type: 'clear' }); }
+			function remove(id) { vscode.postMessage({ type: 'remove', id }); }
+			function edit(id) { vscode.postMessage({ type: 'edit', id }); }
+			function addCurrent() { vscode.postMessage({ type: 'addCurrent' }); }
+		</script>
+	</body>
+	</html>`;
+}
+function escapeHtml(input) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    };
+    return input.replace(/[&<>"']/g, (c) => map[c] ?? c);
+}
+// Inline SVG icons (offline-friendly)
+function folderIcon() {
+    return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:6px"><path d="M3 7C3 5.89543 3.89543 5 5 5H9L11 7H19C20.1046 7 21 7.89543 21 9V18C21 19.1046 20.1046 20 19 20H5C3.89543 20 3 19.1046 3 18V7Z" fill="#90cdf4"/></svg>`;
+}
+function lockIcon() {
+    return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-left:6px"><path d="M17 9H16V7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7V9H7C5.89543 9 5 9.89543 5 11V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V11C19 9.89543 18.1046 9 17 9ZM10 9V7C10 5.89543 10.8954 5 12 5C13.1046 5 14 5.89543 14 7V9H10Z" fill="#f6ad55"/></svg>`;
+}
+function playIcon() {
+    return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:6px"><path d="M8 5V19L19 12L8 5Z" fill="#86efac"/></svg>`;
+}
+function editIcon() {
+    return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:6px"><path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25Z" fill="#c7b9ff"/><path d="M20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z" fill="#c7b9ff"/></svg>`;
+}
+function removeIcon() {
+    return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle"><path d="M9 3H15L16 5H21V7H3V5H8L9 3Z" fill="#f87171"/><path d="M6 9H18V19C18 20.1046 17.1046 21 16 21H8C6.89543 21 6 20.1046 6 19V9Z" fill="#fecaca"/></svg>`;
 }
 // ============ AUTO-RESUME ============
 async function handleAutoResume(context, secrets) {

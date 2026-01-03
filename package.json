@@ -18,7 +18,8 @@
     "productivity"
   ],
   "activationEvents": [
-    "onStartupFinished"
+    "onStartupFinished",
+    "onCommand:worksnap.openDashboard"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -47,8 +48,30 @@
         "command": "workspace-jumper.toggleSensitive",
         "title": "Toggle Sensitive Flag on Current Workspace",
         "category": "WorkSnap"
+      },
+      {
+        "command": "worksnap.openDashboard",
+        "title": "WorkSnap: Open Dashboard",
+        "category": "WorkSnap"
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "worksnap",
+          "title": "WorkSnap",
+          "icon": "media/icon.png"
+        }
+      ]
+    },
+    "views": {
+      "worksnap": [
+        {
+          "id": "worksnap.sidebarView",
+          "name": "WorkSnap Dashboard"
+        }
+      ]
+    },
     "configuration": {
       "title": "WorkSnap",
       "properties": {
@@ -112,13 +135,21 @@
   "scripts": {
     "compile": "tsc -p tsconfig.json",
     "watch": "tsc -w -p tsconfig.json",
+    "watch:esbuild": "node esbuild.js --watch",
     "pretest": "npm run compile",
-    "package": "vsce package"
+    "package": "vsce package",
+    "icon:svg2png": "inkscape media/icon.svg --export-type=png --export-filename=media/icon.png --export-width=128 --export-height=128",
+    "icon:svg2png:magick": "magick convert media/icon.svg -resize 128x128 media/icon.png",
+    "icon:node": "node scripts/convert-icon.js",
+    "dev": "npm run watch"
   },
+  "icon": "media/icon.png",
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "@types/vscode": "^1.107.0",
+    "esbuild": "^0.27.2",
+    "sharp": "^0.32.0",
     "typescript": "^5.9.3"
   }
 }
