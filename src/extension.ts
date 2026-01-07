@@ -674,11 +674,13 @@ function getDashboardHtml(webview: vscode.Webview, context: vscode.ExtensionCont
 			.btn-danger {
 				background: transparent;
 				color: var(--vscode-errorForeground);
-				border: 1px solid var(--vscode-errorForeground);
+				border: none;
+				padding: 4px 8px;
 			}
 
 			.btn-danger:hover {
-				background: var(--vscode-inputValidation-errorBackground);
+				background: rgba(245, 127, 0, 0.2);
+				opacity: 1;
 			}
 
 			.footer {
