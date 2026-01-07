@@ -2,7 +2,7 @@
   "name": "workspace-jumper",
   "displayName": "WorkSnap - Workspace Manager",
   "description": "🚀 Quick workspace switcher with encrypted history, instant navigation, and privacy-first design. Jump between projects with one click!",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "publisher": "omara",
   "repository": {
     "type": "git",
