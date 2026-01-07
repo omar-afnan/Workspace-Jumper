@@ -98,7 +98,7 @@ function generateId(): string {
 	return crypto.randomBytes(8).toString('hex');
 }
 
-// ============ CONFIGURATION HELPERS ============
+//  CONFIGURATION HELPERS 
 function getConfig(): WorkspaceConfig {
 	const config = vscode.workspace.getConfiguration('worksnap');
 	return {
@@ -107,7 +107,7 @@ function getConfig(): WorkspaceConfig {
 	};
 }
 
-// ============ MAIN EXTENSION ============
+//  MAIN EXTENSION 
 export function activate(context: vscode.ExtensionContext) {
 	console.log('WorkSnap activated - Privacy-focused workspace manager');
 
@@ -377,7 +377,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}
 }
 
-// ============ DASHBOARD WEBVIEW ============
+//  DASHBOARD WEBVIEW 
 async function openDashboard(context: vscode.ExtensionContext) {
 	const panel = vscode.window.createWebviewPanel(
 		'worksnapDashboard',
@@ -588,7 +588,12 @@ function removeIcon() {
 	return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle"><path d="M9 3H15L16 5H21V7H3V5H8L9 3Z" fill="#f87171"/><path d="M6 9H18V19C18 20.1046 17.1046 21 16 21H8C6.89543 21 6 20.1046 6 19V9Z" fill="#fecaca"/></svg>`;
 }
 
-// ============ AUTO-RESUME ============
+function clipboardTaskIcon(webview: vscode.Webview, context: vscode.ExtensionContext) {
+	const iconUri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'media', 'Clipboard-Task-Pending-Action--Streamline-Plump.png'));
+	return `<img src="${iconUri}" width="14" height="14" style="vertical-align:middle;margin-right:6px" alt="clipboard task">`;
+}
+
+//  AUTO-RESUME 
 async function handleAutoResume(context: vscode.ExtensionContext, secrets: vscode.SecretStorage) {
 	const workspaces = context.globalState.get<WorkspaceSession[]>(STORAGE_KEY, []);
 	if (workspaces.length === 0) return;
@@ -616,7 +621,7 @@ async function handleAutoResume(context: vscode.ExtensionContext, secrets: vscod
 	);
 }
 
-// ============ SAVE WORKSPACE ============
+//  SAVE WORKSPACE 
 async function saveCurrentWorkspace(context: vscode.ExtensionContext, secrets: vscode.SecretStorage) {
 	const folders = vscode.workspace.workspaceFolders;
 	if (!folders || folders.length === 0) return;
@@ -667,7 +672,7 @@ async function saveCurrentWorkspace(context: vscode.ExtensionContext, secrets: v
 	workspaceHistoryChanged.fire();
 }
 
-// ============ WORKSPACE PICKER ============
+//  WORKSPACE PICKER 
 async function showWorkspacePicker(context: vscode.ExtensionContext, secrets: vscode.SecretStorage) {
 	const workspaces = context.globalState.get<WorkspaceSession[]>(STORAGE_KEY, []);
 
@@ -719,7 +724,8 @@ async function showWorkspacePicker(context: vscode.ExtensionContext, secrets: vs
 	);
 }
 
-// ============ EDIT WORKSPACE ============
+//  EDIT WORKSPACE 
+
 async function editWorkspace(context: vscode.ExtensionContext, secrets: vscode.SecretStorage) {
 	const workspaces = context.globalState.get<WorkspaceSession[]>(STORAGE_KEY, []);
 
@@ -778,7 +784,7 @@ async function editWorkspace(context: vscode.ExtensionContext, secrets: vscode.S
 	}
 }
 
-// ============ REMOVE WORKSPACE ============
+//  REMOVE WORKSPACE 
 async function removeWorkspace(context: vscode.ExtensionContext, secrets: vscode.SecretStorage) {
 	const workspaces = context.globalState.get<WorkspaceSession[]>(STORAGE_KEY, []);
 
@@ -805,7 +811,7 @@ async function removeWorkspace(context: vscode.ExtensionContext, secrets: vscode
 	vscode.window.showInformationMessage(`Workspace "${selected.workspace.nickname}" removed from history.`);
 }
 
-// ============ TOGGLE SENSITIVE ON CURRENT ============
+//  TOGGLE SENSITIVE ON CURRENT 
 async function toggleCurrentWorkspaceSensitive(context: vscode.ExtensionContext, secrets: vscode.SecretStorage) {
 	const folders = vscode.workspace.workspaceFolders;
 	if (!folders || folders.length === 0) {
