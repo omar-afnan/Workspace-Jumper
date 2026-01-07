@@ -38,23 +38,29 @@ exports.deactivate = deactivate;
 const vscode = __importStar(require("vscode"));
 const path = __importStar(require("path"));
 const crypto = __importStar(require("crypto"));
-//  CONSTANTS 
+//  CONSTANTS
 const STORAGE_KEY = 'workspace-jumper.workspaces';
 const ENCRYPTION_KEY_ID = 'workspace-jumper.encryptionKey';
 const MAX_HISTORY = 10;
 const ALGORITHM = 'aes-256-gcm';
+// Cache for encryption key to avoid repeated SecretStorage calls
+let encryptionKeyCache = null;
 //  ENCRYPTION HELPERS 
 // Generate a random encryption key
 function generateEncryptionKey() {
     return crypto.randomBytes(32).toString('hex');
 }
-// Get or create encryption key using SecretStorage
+// Get or create encryption key using SecretStorage (with caching)
 async function getEncryptionKey(secrets) {
+    if (encryptionKeyCache) {
+        return encryptionKeyCache;
+    }
     let key = await secrets.get(ENCRYPTION_KEY_ID);
     if (!key) {
         key = generateEncryptionKey();
         await secrets.store(ENCRYPTION_KEY_ID, key);
     }
+    encryptionKeyCache = key;
     return key;
 }
 // Encrypt a string using AES-256-GCM
@@ -94,7 +100,7 @@ function decrypt(encryptedData, keyHex) {
 function generateId() {
     return crypto.randomBytes(8).toString('hex');
 }
-// ============ CONFIGURATION HELPERS ============
+//  CONFIGURATION HELPERS 
 function getConfig() {
     const config = vscode.workspace.getConfiguration('worksnap');
     return {
@@ -102,11 +108,15 @@ function getConfig() {
         maxHistory: config.get('maxHistory', MAX_HISTORY)
     };
 }
-// ============ MAIN EXTENSION ============
+//  MAIN EXTENSION 
 function activate(context) {
     console.log('WorkSnap activated - Privacy-focused workspace manager');
     const secrets = context.secrets;
     const config = getConfig();
+    // Preload encryption key for instant first-time access
+    getEncryptionKey(secrets).catch(err => {
+        console.error('Failed to preload encryption key:', err);
+    });
     // Status bar button
     const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
     statusBar.text = '$(briefcase) WorkSnap';
@@ -151,11 +161,109 @@ function activate(context) {
     // Register a sidebar view provider so the dashboard appears in the left Activity Bar
     class WorkSnapViewProvider {
         ctx;
+        _view;
         constructor(ctx) {
             this.ctx = ctx;
         }
         async resolveWebviewView(webviewView) {
+            this._view = webviewView;
             webviewView.webview.options = { enableScripts: true };
+            await this.refreshView();
+            webviewView.webview.onDidReceiveMessage(async (msg) => {
+                switch (msg.type) {
+                    case 'resume':
+                        vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(msg.path), false);
+                        break;
+                    case 'clear':
+                        await this.ctx.globalState.update(STORAGE_KEY, []);
+                        await this.refreshView();
+                        vscode.window.showInformationMessage('WorkSnap: All workspace history cleared');
+                        break;
+                    case 'remove':
+                        {
+                            const list = this.ctx.globalState.get(STORAGE_KEY, []);
+                            const filtered = list.filter(w => w.id !== msg.id);
+                            await this.ctx.globalState.update(STORAGE_KEY, filtered);
+                            await this.refreshView();
+                            vscode.window.showInformationMessage('WorkSnap: Workspace removed');
+                        }
+                        break;
+                    case 'addCurrent':
+                        {
+                            const folders = vscode.workspace.workspaceFolders;
+                            if (!folders || folders.length === 0) {
+                                vscode.window.showWarningMessage('No folder is currently open.');
+                                return;
+                            }
+                            const folderPath = folders[0].uri.fsPath;
+                            const secrets = this.ctx.secrets;
+                            const key = await getEncryptionKey(secrets);
+                            const list = this.ctx.globalState.get(STORAGE_KEY, []);
+                            // Check if workspace already exists
+                            const existing = list.find(ws => decrypt(ws.encryptedPath, key) === folderPath);
+                            if (existing) {
+                                vscode.window.showInformationMessage(`WorkSnap: "${existing.nickname}" is already in your workspace history`);
+                                return;
+                            }
+                            // Ask for nickname
+                            const nickname = await vscode.window.showInputBox({
+                                prompt: 'Enter a nickname for this workspace',
+                                value: folderPath.split(/[\\/]/).pop() || 'Workspace',
+                                validateInput: (val) => val.trim() ? null : 'Nickname cannot be empty'
+                            });
+                            if (!nickname)
+                                return;
+                            const encrypted = encrypt(folderPath, key);
+                            const newSession = {
+                                id: crypto.randomBytes(8).toString('hex'),
+                                nickname: nickname.trim(),
+                                encryptedPath: encrypted,
+                                lastOpened: new Date().toISOString(),
+                                isSensitive: false
+                            };
+                            const maxHistory = vscode.workspace.getConfiguration('worksnap').get('maxHistory', 10);
+                            const updated = [newSession, ...list].slice(0, maxHistory);
+                            await this.ctx.globalState.update(STORAGE_KEY, updated);
+                            await this.refreshView();
+                            vscode.window.showInformationMessage(`WorkSnap: Added "${nickname}" to workspace history`);
+                        }
+                        break;
+                    case 'edit':
+                        {
+                            const list = this.ctx.globalState.get(STORAGE_KEY, []);
+                            const workspace = list.find(w => w.id === msg.id);
+                            if (!workspace)
+                                return;
+                            const choice = await vscode.window.showQuickPick([
+                                { label: '$(edit) Edit Nickname', action: 'nickname' },
+                                { label: `$(${workspace.isSensitive ? 'unlock' : 'lock'}) ${workspace.isSensitive ? 'Remove' : 'Mark as'} Sensitive`, action: 'sensitive' }
+                            ], { placeHolder: `Edit "${workspace.nickname}"` });
+                            if (!choice)
+                                return;
+                            if (choice.action === 'nickname') {
+                                const newName = await vscode.window.showInputBox({
+                                    prompt: 'Enter new nickname',
+                                    value: workspace.nickname,
+                                    validateInput: (val) => val.trim() ? null : 'Nickname cannot be empty'
+                                });
+                                if (!newName)
+                                    return;
+                                workspace.nickname = newName.trim();
+                            }
+                            else if (choice.action === 'sensitive') {
+                                workspace.isSensitive = !workspace.isSensitive;
+                            }
+                            await this.ctx.globalState.update(STORAGE_KEY, list);
+                            await this.refreshView();
+                            vscode.window.showInformationMessage('WorkSnap: Workspace updated');
+                        }
+                        break;
+                }
+            });
+        }
+        async refreshView() {
+            if (!this._view)
+                return;
             const secrets = this.ctx.secrets;
             const encryptionKey = await getEncryptionKey(secrets);
             const workspaces = this.ctx.globalState.get(STORAGE_KEY, []);
@@ -163,7 +271,7 @@ function activate(context) {
                 const decrypted = decrypt(ws.encryptedPath, encryptionKey) || '';
                 return `
 					<div class="card">
-						<div class="title">${folderIcon()} ${escapeHtml(ws.nickname)} ${ws.isSensitive ? lockIcon() : ''}</div>
+						<div class="title">${folderIcon(5)} ${escapeHtml(ws.nickname)} ${ws.isSensitive ? lockIcon() : ''}</div>
 						<div class="path">${escapeHtml(ws.nickname)}</div>
 						<div class="actions">
 							<button data-path="${encodeURIComponent(decrypted)}" onclick="resume(this)">${playIcon()} Resume</button>
@@ -173,30 +281,7 @@ function activate(context) {
 					</div>
 				`;
             }).join('');
-            webviewView.webview.html = getDashboardHtml(webviewView.webview, this.ctx, rows);
-            webviewView.webview.onDidReceiveMessage(async (msg) => {
-                switch (msg.type) {
-                    case 'resume':
-                        vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(msg.path), false);
-                        break;
-                    case 'clear':
-                        await this.ctx.globalState.update(STORAGE_KEY, []);
-                        webviewView.webview.html = getDashboardHtml(webviewView.webview, this.ctx, '');
-                        break;
-                    case 'remove':
-                        {
-                            const list = this.ctx.globalState.get(STORAGE_KEY, []);
-                            const filtered = list.filter(w => w.id !== msg.id);
-                            await this.ctx.globalState.update(STORAGE_KEY, filtered);
-                            const newRows = filtered.map(ws => {
-                                const dec = decrypt(ws.encryptedPath, encryptionKey) || '';
-                                return `\n\t\t\t<div class="card">\n\t\t\t\t<div class="title">${folderIcon()} ${escapeHtml(ws.nickname)} ${ws.isSensitive ? lockIcon() : ''}</div>\n\t\t\t\t<div class="path">${escapeHtml(ws.nickname)}</div>\n\t\t\t\t<div class=\"actions\">\n\t\t\t\t\t<button data-path=\"${encodeURIComponent(dec)}\" onclick=\"resume(this)\">${playIcon()} Resume</button>\n\t\t\t\t\t<button onclick=\"edit('${ws.id}')\">${editIcon()} Edit</button>\n\t\t\t\t\t<button onclick=\"remove('${ws.id}')\">${removeIcon()}</button>\n\t\t\t\t</div>\n\t\t\t</div>`;
-                            }).join('');
-                            webviewView.webview.html = getDashboardHtml(webviewView.webview, this.ctx, newRows);
-                        }
-                        break;
-                }
-            });
+            this._view.webview.html = getDashboardHtml(this._view.webview, this.ctx, rows);
         }
     }
     const provider = new WorkSnapViewProvider(context);
@@ -240,27 +325,30 @@ function activate(context) {
         }
     }
 }
-// ============ DASHBOARD WEBVIEW ============
+//  DASHBOARD WEBVIEW 
 async function openDashboard(context) {
     const panel = vscode.window.createWebviewPanel('worksnapDashboard', 'WorkSnap', vscode.ViewColumn.One, { enableScripts: true, retainContextWhenHidden: true });
-    const secrets = context.secrets;
-    const encryptionKey = await getEncryptionKey(secrets);
-    const workspaces = context.globalState.get(STORAGE_KEY, []);
-    const rows = workspaces.map(ws => {
-        const decrypted = decrypt(ws.encryptedPath, encryptionKey) || '';
-        return `
-			<div class="card">
-				<div class="title">${folderIcon()} ${escapeHtml(ws.nickname)} ${ws.isSensitive ? lockIcon() : ''}</div>
-				<div class="path">${escapeHtml(ws.nickname)}</div>
-				<div class="actions">
-					<button data-path="${encodeURIComponent(decrypted)}" onclick="resume(this)">${playIcon()} Resume</button>
-					<button onclick="edit('${ws.id}')">${editIcon()} Edit</button>
-					<button onclick="remove('${ws.id}')">${removeIcon()}</button>
+    const refreshDashboard = async () => {
+        const secrets = context.secrets;
+        const encryptionKey = await getEncryptionKey(secrets);
+        const workspaces = context.globalState.get(STORAGE_KEY, []);
+        const rows = workspaces.map(ws => {
+            const decrypted = decrypt(ws.encryptedPath, encryptionKey) || '';
+            return `
+				<div class="card">
+					<div class="title">${folderIcon()} ${escapeHtml(ws.nickname)} ${ws.isSensitive ? lockIcon() : ''}</div>
+					<div class="path">${escapeHtml(ws.nickname)}</div>
+					<div class="actions">
+						<button data-path="${encodeURIComponent(decrypted)}" onclick="resume(this)">${playIcon()} Resume</button>
+						<button onclick="edit('${ws.id}')">${editIcon()} Edit</button>
+						<button onclick="remove('${ws.id}')">${removeIcon()}</button>
+					</div>
 				</div>
-			</div>
-		`;
-    }).join('');
-    panel.webview.html = getDashboardHtml(panel.webview, context, rows);
+			`;
+        }).join('');
+        panel.webview.html = getDashboardHtml(panel.webview, context, rows);
+    };
+    await refreshDashboard();
     panel.webview.onDidReceiveMessage(async (msg) => {
         switch (msg.type) {
             case 'resume':
@@ -268,18 +356,86 @@ async function openDashboard(context) {
                 break;
             case 'clear':
                 await context.globalState.update(STORAGE_KEY, []);
-                panel.webview.html = getDashboardHtml(panel.webview, context, '');
+                await refreshDashboard();
+                vscode.window.showInformationMessage('WorkSnap: All workspace history cleared');
                 break;
             case 'remove':
                 {
                     const list = context.globalState.get(STORAGE_KEY, []);
                     const filtered = list.filter(w => w.id !== msg.id);
                     await context.globalState.update(STORAGE_KEY, filtered);
-                    const newRows = filtered.map(ws => {
-                        const dec = decrypt(ws.encryptedPath, encryptionKey) || '';
-                        return `\n\t\t\t<div class="card">\n\t\t\t\t<div class="title">${folderIcon()} ${escapeHtml(ws.nickname)} ${ws.isSensitive ? lockIcon() : ''}</div>\n\t\t\t\t<div class="path">${escapeHtml(ws.nickname)}</div>\n\t\t\t\t<div class=\"actions\">\n\t\t\t\t\t<button data-path=\"${encodeURIComponent(dec)}\" onclick=\"resume(this)\">${playIcon()} Resume</button>\n\t\t\t\t\t<button onclick=\"edit('${ws.id}')\">${editIcon()} Edit</button>\n\t\t\t\t\t<button onclick=\"remove('${ws.id}')\">${removeIcon()}</button>\n\t\t\t\t</div>\n\t\t\t</div>`;
-                    }).join('');
-                    panel.webview.html = getDashboardHtml(panel.webview, context, newRows);
+                    await refreshDashboard();
+                    vscode.window.showInformationMessage('WorkSnap: Workspace removed');
+                }
+                break;
+            case 'addCurrent':
+                {
+                    const folders = vscode.workspace.workspaceFolders;
+                    if (!folders || folders.length === 0) {
+                        vscode.window.showWarningMessage('No folder is currently open.');
+                        return;
+                    }
+                    const folderPath = folders[0].uri.fsPath;
+                    const secrets = context.secrets;
+                    const key = await getEncryptionKey(secrets);
+                    const list = context.globalState.get(STORAGE_KEY, []);
+                    // Check if workspace already exists
+                    const existing = list.find(ws => decrypt(ws.encryptedPath, key) === folderPath);
+                    if (existing) {
+                        vscode.window.showInformationMessage(`WorkSnap: "${existing.nickname}" is already in your workspace history`);
+                        return;
+                    }
+                    // Ask for nickname
+                    const nickname = await vscode.window.showInputBox({
+                        prompt: 'Enter a nickname for this workspace',
+                        value: folderPath.split(/[\\/]/).pop() || 'Workspace',
+                        validateInput: (val) => val.trim() ? null : 'Nickname cannot be empty'
+                    });
+                    if (!nickname)
+                        return;
+                    const encrypted = encrypt(folderPath, key);
+                    const newSession = {
+                        id: crypto.randomBytes(8).toString('hex'),
+                        nickname: nickname.trim(),
+                        encryptedPath: encrypted,
+                        lastOpened: new Date().toISOString(),
+                        isSensitive: false
+                    };
+                    const maxHistory = vscode.workspace.getConfiguration('worksnap').get('maxHistory', 10);
+                    const updated = [newSession, ...list].slice(0, maxHistory);
+                    await context.globalState.update(STORAGE_KEY, updated);
+                    await refreshDashboard();
+                    vscode.window.showInformationMessage(`WorkSnap: Added "${nickname}" to workspace history`);
+                }
+                break;
+            case 'edit':
+                {
+                    const list = context.globalState.get(STORAGE_KEY, []);
+                    const workspace = list.find(w => w.id === msg.id);
+                    if (!workspace)
+                        return;
+                    const choice = await vscode.window.showQuickPick([
+                        { label: '$(edit) Edit Nickname', action: 'nickname' },
+                        { label: `$(${workspace.isSensitive ? 'unlock' : 'lock'}) ${workspace.isSensitive ? 'Remove' : 'Mark as'} Sensitive`, action: 'sensitive' }
+                    ], { placeHolder: `Edit "${workspace.nickname}"` });
+                    if (!choice)
+                        return;
+                    if (choice.action === 'nickname') {
+                        const newName = await vscode.window.showInputBox({
+                            prompt: 'Enter new nickname',
+                            value: workspace.nickname,
+                            validateInput: (val) => val.trim() ? null : 'Nickname cannot be empty'
+                        });
+                        if (!newName)
+                            return;
+                        workspace.nickname = newName.trim();
+                    }
+                    else if (choice.action === 'sensitive') {
+                        workspace.isSensitive = !workspace.isSensitive;
+                    }
+                    await context.globalState.update(STORAGE_KEY, list);
+                    await refreshDashboard();
+                    vscode.window.showInformationMessage('WorkSnap: Workspace updated');
                 }
                 break;
         }
@@ -351,7 +507,7 @@ function editIcon() {
 function removeIcon() {
     return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle"><path d="M9 3H15L16 5H21V7H3V5H8L9 3Z" fill="#f87171"/><path d="M6 9H18V19C18 20.1046 17.1046 21 16 21H8C6.89543 21 6 20.1046 6 19V9Z" fill="#fecaca"/></svg>`;
 }
-// ============ AUTO-RESUME ============
+//  AUTO-RESUME 
 async function handleAutoResume(context, secrets) {
     const workspaces = context.globalState.get(STORAGE_KEY, []);
     if (workspaces.length === 0)
@@ -367,11 +523,10 @@ async function handleAutoResume(context, secrets) {
         if (confirm !== 'Yes')
             return;
     }
-    setTimeout(() => {
-        vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(workspacePath), false);
-    }, 500);
+    // Open workspace immediately (no artificial delay)
+    vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(workspacePath), false);
 }
-// ============ SAVE WORKSPACE ============
+//  SAVE WORKSPACE 
 async function saveCurrentWorkspace(context, secrets) {
     const folders = vscode.workspace.workspaceFolders;
     if (!folders || folders.length === 0)
@@ -381,12 +536,13 @@ async function saveCurrentWorkspace(context, secrets) {
     const encryptionKey = await getEncryptionKey(secrets);
     const config = getConfig();
     const workspaces = context.globalState.get(STORAGE_KEY, []);
-    // Check if this workspace already exists (by decrypting and comparing paths)
+    // Optimization: Decrypt all paths in one batch to check for duplicates
     let existingIndex = -1;
     let existingWorkspace = null;
-    for (let i = 0; i < workspaces.length; i++) {
-        const decryptedPath = decrypt(workspaces[i].encryptedPath, encryptionKey);
-        if (decryptedPath === folderPath) {
+    // Decrypt all paths at once for comparison
+    const decryptedPaths = workspaces.map(ws => decrypt(ws.encryptedPath, encryptionKey));
+    for (let i = 0; i < decryptedPaths.length; i++) {
+        if (decryptedPaths[i] === folderPath) {
             existingIndex = i;
             existingWorkspace = workspaces[i];
             break;
@@ -409,31 +565,28 @@ async function saveCurrentWorkspace(context, secrets) {
     // Keep only max history
     await context.globalState.update(STORAGE_KEY, filtered.slice(0, config.maxHistory));
 }
-// ============ WORKSPACE PICKER ============
+//  WORKSPACE PICKER 
 async function showWorkspacePicker(context, secrets) {
     const workspaces = context.globalState.get(STORAGE_KEY, []);
     if (workspaces.length === 0) {
         vscode.window.showInformationMessage('No saved workspaces yet. Open a folder to add it to history.');
         return;
     }
-    const encryptionKey = await getEncryptionKey(secrets);
-    // Build quick pick items
+    // Build quick pick items WITHOUT decrypting paths yet (lazy decryption)
     const items = workspaces.map(ws => {
-        const decryptedPath = decrypt(ws.encryptedPath, encryptionKey);
         const sensitiveIcon = ws.isSensitive ? '$(lock) ' : '';
         return {
             label: `${sensitiveIcon}${ws.nickname}`,
-            description: ws.isSensitive ? '(sensitive)' : decryptedPath,
+            description: ws.isSensitive ? '(sensitive)' : '',
             detail: `Last opened: ${new Date(ws.lastOpened).toLocaleString()}`,
-            workspace: ws,
-            path: decryptedPath
+            workspace: ws
         };
     });
     const pick = await vscode.window.showQuickPick(items, {
         placeHolder: 'Select a workspace to open',
-        matchOnDescription: true
+        matchOnDescription: false
     });
-    if (!pick || !pick.path)
+    if (!pick)
         return;
     // Confirm if sensitive
     if (pick.workspace.isSensitive) {
@@ -441,9 +594,16 @@ async function showWorkspacePicker(context, secrets) {
         if (confirm !== 'Yes')
             return;
     }
-    await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(pick.path), false);
+    // Only decrypt the selected workspace path
+    const encryptionKey = await getEncryptionKey(secrets);
+    const workspacePath = decrypt(pick.workspace.encryptedPath, encryptionKey);
+    if (!workspacePath) {
+        vscode.window.showErrorMessage('Failed to decrypt workspace path');
+        return;
+    }
+    await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(workspacePath), false);
 }
-// ============ EDIT WORKSPACE ============
+//  EDIT WORKSPACE 
 async function editWorkspace(context, secrets) {
     const workspaces = context.globalState.get(STORAGE_KEY, []);
     if (workspaces.length === 0) {
@@ -493,7 +653,7 @@ async function editWorkspace(context, secrets) {
         vscode.window.showInformationMessage(`Workspace "${selected.workspace.nickname}" is now ${status}`);
     }
 }
-// ============ REMOVE WORKSPACE ============
+//  REMOVE WORKSPACE 
 async function removeWorkspace(context, secrets) {
     const workspaces = context.globalState.get(STORAGE_KEY, []);
     if (workspaces.length === 0) {
@@ -514,7 +674,7 @@ async function removeWorkspace(context, secrets) {
     await context.globalState.update(STORAGE_KEY, filtered);
     vscode.window.showInformationMessage(`Workspace "${selected.workspace.nickname}" removed from history.`);
 }
-// ============ TOGGLE SENSITIVE ON CURRENT ============
+//  TOGGLE SENSITIVE ON CURRENT 
 async function toggleCurrentWorkspaceSensitive(context, secrets) {
     const folders = vscode.workspace.workspaceFolders;
     if (!folders || folders.length === 0) {

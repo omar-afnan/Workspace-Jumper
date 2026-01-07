@@ -1,9 +1,13 @@
 {
   "name": "workspace-jumper",
-  "displayName": "WorkSnap",
-  "description": "Privacy-focused workspace manager - encrypted storage, no network access",
+  "displayName": "WorkSnap - Workspace Manager",
+  "description": "🚀 Quick workspace switcher with encrypted history, instant navigation, and privacy-first design. Jump between projects with one click!",
   "version": "1.0.0",
   "publisher": "omara",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/omara/workspace-jumper"
+  },
   "engines": {
     "vscode": "^1.107.0"
   },
@@ -12,15 +16,17 @@
   ],
   "keywords": [
     "workspace",
+    "workspace manager",
+    "workspace switcher",
     "privacy",
     "encrypted",
     "secure",
-    "productivity"
+    "productivity",
+    "navigation",
+    "project manager",
+    "quick switch"
   ],
-  "activationEvents": [
-    "onStartupFinished",
-    "onCommand:worksnap.openDashboard"
-  ],
+  "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
@@ -68,7 +74,8 @@
       "worksnap": [
         {
           "id": "worksnap.sidebarView",
-          "name": "WorkSnap Dashboard"
+          "name": "WorkSnap Dashboard",
+          "type": "webview"
         }
       ]
     },
@@ -135,13 +142,15 @@
   "scripts": {
     "compile": "tsc -p tsconfig.json",
     "watch": "tsc -w -p tsconfig.json",
+    "watch:tsc": "tsc -w -p tsconfig.json",
     "watch:esbuild": "node esbuild.js --watch",
     "pretest": "npm run compile",
     "package": "vsce package",
     "icon:svg2png": "inkscape media/icon.svg --export-type=png --export-filename=media/icon.png --export-width=128 --export-height=128",
     "icon:svg2png:magick": "magick convert media/icon.svg -resize 128x128 media/icon.png",
     "icon:node": "node scripts/convert-icon.js",
-    "dev": "npm run watch"
+    "dev": "npm run watch",
+    "vscode:prepublish": "npm run compile"
   },
   "icon": "media/icon.png",
   "devDependencies": {
