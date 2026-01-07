@@ -6,7 +6,7 @@
   "publisher": "omara",
   "repository": {
     "type": "git",
-    "url": "https://github.com/omara/workspace-jumper"
+    "url": "https://github.com/omar-afnan/workspace-jumper"
   },
   "engines": {
     "vscode": "^1.107.0"
