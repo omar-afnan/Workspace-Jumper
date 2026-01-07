@@ -32,4 +32,6 @@ jobs:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
         run: |
           npm install -g @vscode/vsce
-          vsce publish -p $VSCE_PAT
+          echo "Current version in package.json:"
+          node -p "require('./package.json').version"
+          vsce publish -p $VSCE_PAT --allow-star-activation --allow-missing-repository
