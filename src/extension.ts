@@ -203,7 +203,13 @@ export function activate(context: vscode.ExtensionContext) {
 
 		public async resolveWebviewView(webviewView: vscode.WebviewView) {
 			this._view = webviewView;
-			webviewView.webview.options = { enableScripts: true };
+			webviewView.webview.options = {
+				enableScripts: true,
+				localResourceRoots: [
+					vscode.Uri.joinPath(this.ctx.extensionUri, 'media'),
+					vscode.Uri.joinPath(this.ctx.extensionUri, 'node_modules', '@vscode/codicons', 'dist')
+				]
+			};
 
 			await this.refreshView();
 
@@ -314,14 +320,27 @@ export function activate(context: vscode.ExtensionContext) {
 
 			const rows = workspaces.map(ws => {
 				const decrypted = decrypt(ws.encryptedPath, encryptionKey) || '';
+				const displayPath = decrypted.split(/[\\/]/).slice(-2).join('/'); // Show last 2 path segments
 				return `
 					<div class="card">
-						<div class="title">${folderIcon()} ${escapeHtml(ws.nickname)} ${ws.isSensitive ? lockIcon() : ''}</div>
-						<div class="path">${escapeHtml(ws.nickname)}</div>
+						<div class="card-header">
+							<div class="title">
+								<span class="codicon codicon-folder"></span>
+								<span class="workspace-name">${escapeHtml(ws.nickname)}</span>
+								${ws.isSensitive ? '<span class="codicon codicon-lock" style="color:#f59e0b"></span>' : ''}
+							</div>
+						</div>
+						<div class="path">${escapeHtml(displayPath)}</div>
 						<div class="actions">
-							<button data-path="${encodeURIComponent(decrypted)}" onclick="resume(this)">${playIcon()} Resume</button>
-							<button onclick="edit('${ws.id}')">${editIcon()} Edit</button>
-							<button onclick="remove('${ws.id}')">${removeIcon()}</button>
+							<button class="btn-primary" data-path="${encodeURIComponent(decrypted)}" onclick="resume(this)">
+								<span class="codicon codicon-play"></span> Open
+							</button>
+							<button class="btn-secondary" onclick="edit('${ws.id}')">
+								<span class="codicon codicon-edit"></span>
+							</button>
+							<button class="btn-danger" onclick="remove('${ws.id}')">
+								<span class="codicon codicon-trash"></span>
+							</button>
 						</div>
 					</div>
 				`;
@@ -333,7 +352,11 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const provider = new WorkSnapViewProvider(context);
 	context.subscriptions.push(
-		vscode.window.registerWebviewViewProvider('worksnap.sidebarView', provider),
+		vscode.window.registerWebviewViewProvider('worksnap.sidebarView', provider, {
+			webviewOptions: {
+				retainContextWhenHidden: true
+			}
+		}),
 		workspaceHistoryChanged // Dispose event emitter on deactivation
 	);
 
@@ -393,14 +416,27 @@ async function openDashboard(context: vscode.ExtensionContext) {
 
 		const rows = workspaces.map(ws => {
 			const decrypted = decrypt(ws.encryptedPath, encryptionKey) || '';
+			const displayPath = decrypted.split(/[\\/]/).slice(-2).join('/');
 			return `
 				<div class="card">
-					<div class="title">${folderIcon()} ${escapeHtml(ws.nickname)} ${ws.isSensitive ? lockIcon() : ''}</div>
-					<div class="path">${escapeHtml(ws.nickname)}</div>
+					<div class="card-header">
+						<div class="title">
+							<span class="codicon codicon-folder"></span>
+							<span class="workspace-name">${escapeHtml(ws.nickname)}</span>
+							${ws.isSensitive ? '<span class="codicon codicon-lock" style="color:#f59e0b"></span>' : ''}
+						</div>
+					</div>
+					<div class="path">${escapeHtml(displayPath)}</div>
 					<div class="actions">
-						<button data-path="${encodeURIComponent(decrypted)}" onclick="resume(this)">${playIcon()} Resume</button>
-						<button onclick="edit('${ws.id}')">${editIcon()} Edit</button>
-						<button onclick="remove('${ws.id}')">${removeIcon()}</button>
+						<button class="btn-primary" data-path="${encodeURIComponent(decrypted)}" onclick="resume(this)">
+							<span class="codicon codicon-play"></span> Open
+						</button>
+						<button class="btn-secondary" onclick="edit('${ws.id}')">
+							<span class="codicon codicon-edit"></span>
+						</button>
+						<button class="btn-danger" onclick="remove('${ws.id}')">
+							<span class="codicon codicon-trash"></span>
+						</button>
 					</div>
 				</div>
 			`;
@@ -515,31 +551,189 @@ async function openDashboard(context: vscode.ExtensionContext) {
 }
 
 function getDashboardHtml(webview: vscode.Webview, context: vscode.ExtensionContext, rows: string) {
+	const codiconsUri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'node_modules', '@vscode/codicons', 'dist', 'codicon.css'));
+	const fontUri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'node_modules', '@vscode/codicons', 'dist', 'codicon.ttf'));
+	const clipboardIconUri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'media', 'Clipboard-Task-Pending-Action--Streamline-Plump.png'));
+
 	return `<!DOCTYPE html>
 	<html>
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link href="${codiconsUri}" rel="stylesheet" />
 		<style>
-			body { font-family: sans-serif; background: #0f172a; color: #e5e7eb; padding: 16px; }
-			h2 { margin: 0 0 6px 0 }
-			.card { background: #1e293b; padding: 12px; margin-bottom: 10px; border-radius: 10px; }
-			.title { font-weight: 600; margin-bottom: 4px }
-			.path { color: #94a3b8; font-size: 12px; margin-bottom: 8px }
-			.actions { display: flex; gap: 8px }
-			button { background: #3b82f6; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer }
-			.footer { margin-top: 12px; display:flex; gap:10px }
-			.small { background: #334155; padding:8px 10px; border-radius:8px }
+			@font-face {
+				font-family: 'codicon';
+				src: url('${fontUri}') format('truetype');
+			}
+		</style>
+		<style>
+			* { margin: 0; padding: 0; box-sizing: border-box; }
+
+			body {
+				font-family: var(--vscode-font-family);
+				background: var(--vscode-sideBar-background);
+				color: var(--vscode-foreground);
+				padding: 12px;
+				font-size: 13px;
+			}
+
+			.header {
+				margin-bottom: 16px;
+			}
+
+			.header h2 {
+				font-size: 14px;
+				font-weight: 600;
+				margin-bottom: 4px;
+				color: var(--vscode-foreground);
+			}
+
+			.header p {
+				font-size: 12px;
+				color: var(--vscode-descriptionForeground);
+			}
+
+			.card {
+				background: var(--vscode-editor-background);
+				border: 1px solid var(--vscode-panel-border);
+				padding: 12px;
+				margin-bottom: 8px;
+				border-radius: 4px;
+			}
+
+			.card:hover {
+				background: var(--vscode-list-hoverBackground);
+			}
+
+			.card-header {
+				margin-bottom: 8px;
+			}
+
+			.title {
+				display: flex;
+				align-items: center;
+				gap: 6px;
+				font-weight: 600;
+				font-size: 13px;
+				margin-bottom: 4px;
+			}
+
+			.workspace-name {
+				flex: 1;
+			}
+
+			.path {
+				color: var(--vscode-descriptionForeground);
+				font-size: 11px;
+				margin-bottom: 10px;
+				padding-left: 20px;
+			}
+
+			.actions {
+				display: flex;
+				gap: 6px;
+			}
+
+			button {
+				display: flex;
+				align-items: center;
+				gap: 4px;
+				border: none;
+				padding: 6px 10px;
+				border-radius: 2px;
+				cursor: pointer;
+				font-size: 12px;
+				font-family: var(--vscode-font-family);
+				transition: background 0.1s;
+			}
+
+			button:hover {
+				opacity: 0.9;
+			}
+
+			.btn-primary {
+				background: var(--vscode-button-background);
+				color: var(--vscode-button-foreground);
+				flex: 1;
+			}
+
+			.btn-primary:hover {
+				background: var(--vscode-button-hoverBackground);
+			}
+
+			.btn-secondary {
+				background: var(--vscode-button-secondaryBackground);
+				color: var(--vscode-button-secondaryForeground);
+			}
+
+			.btn-secondary:hover {
+				background: var(--vscode-button-secondaryHoverBackground);
+			}
+
+			.btn-danger {
+				background: transparent;
+				color: var(--vscode-errorForeground);
+				border: 1px solid var(--vscode-errorForeground);
+			}
+
+			.btn-danger:hover {
+				background: var(--vscode-inputValidation-errorBackground);
+			}
+
+			.footer {
+				margin-top: 12px;
+				display: flex;
+				flex-direction: column;
+				gap: 6px;
+			}
+
+			.footer button {
+				width: 100%;
+				justify-content: center;
+				background: var(--vscode-button-secondaryBackground);
+				color: var(--vscode-button-secondaryForeground);
+			}
+
+			.footer button:hover {
+				background: var(--vscode-button-secondaryHoverBackground);
+			}
+
+			.empty-state {
+				text-align: center;
+				padding: 24px 16px;
+				color: var(--vscode-descriptionForeground);
+			}
+
+			.empty-state .codicon {
+				font-size: 48px;
+				margin-bottom: 12px;
+				opacity: 0.5;
+			}
 		</style>
 	</head>
 	<body>
-		<h2>🧭 WorkSnap</h2>
-		<p>Jump between workspaces instantly</p>
-		${rows || '<p>No workspaces saved.</p>'}
-		<div class="footer">
-			<button class="small" onclick="addCurrent()">➕ Add Current Workspace</button>
-			<button class="small" onclick="clearAll()">🧹 Clear History</button>
+		<div class="header">
+			<h2><img src="${clipboardIconUri}" width="24" height="24" style="vertical-align:middle;margin-right:8px;display:inline-block" alt="WorkSnap"> WorkSnap</h2>
+			<p>Jump between workspaces instantly</p>
 		</div>
+
+		${rows || `
+			<div class="empty-state">
+				<div class="codicon codicon-folder-opened"></div>
+				<p>No workspaces saved yet.</p>
+			</div>
+		`}
+
+		<div class="footer">
+			<button onclick="addCurrent()">
+				<span class="codicon codicon-add"></span> Add Current Workspace
+			</button>
+			<button onclick="clearAll()">
+				<span class="codicon codicon-clear-all"></span> Clear History
+			</button>
+		</div>
+
 		<script>
 			const vscode = acquireVsCodeApi();
 			function resume(el) {
@@ -567,30 +761,10 @@ function escapeHtml(input: string) {
 	return input.replace(/[&<>"']/g, (c) => map[c] ?? c);
 }
 
-// Inline SVG icons (offline-friendly)
-function folderIcon() {
-	return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:6px"><path d="M3 7C3 5.89543 3.89543 5 5 5H9L11 7H19C20.1046 7 21 7.89543 21 9V18C21 19.1046 20.1046 20 19 20H5C3.89543 20 3 19.1046 3 18V7Z" fill="#90cdf4"/></svg>`;
-}
-
-function lockIcon() {
-	return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-left:6px"><path d="M17 9H16V7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7V9H7C5.89543 9 5 9.89543 5 11V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V11C19 9.89543 18.1046 9 17 9ZM10 9V7C10 5.89543 10.8954 5 12 5C13.1046 5 14 5.89543 14 7V9H10Z" fill="#f6ad55"/></svg>`;
-}
-
-function playIcon() {
-	return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:6px"><path d="M8 5V19L19 12L8 5Z" fill="#86efac"/></svg>`;
-}
-
-function editIcon() {
-	return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:6px"><path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25Z" fill="#c7b9ff"/><path d="M20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z" fill="#c7b9ff"/></svg>`;
-}
-
-function removeIcon() {
-	return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle"><path d="M9 3H15L16 5H21V7H3V5H8L9 3Z" fill="#f87171"/><path d="M6 9H18V19C18 20.1046 17.1046 21 16 21H8C6.89543 21 6 20.1046 6 19V9Z" fill="#fecaca"/></svg>`;
-}
-
-function clipboardTaskIcon(webview: vscode.Webview, context: vscode.ExtensionContext) {
-	const iconUri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'media', 'Clipboard-Task-Pending-Action--Streamline-Plump.png'));
-	return `<img src="${iconUri}" width="14" height="14" style="vertical-align:middle;margin-right:6px" alt="clipboard task">`;
+// Helper function for custom PNG icons (if needed in future)
+function customIcon(webview: vscode.Webview, context: vscode.ExtensionContext, filename: string) {
+	const iconUri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'media', filename));
+	return `<img src="${iconUri}" width="14" height="14" style="vertical-align:middle;margin-right:6px" alt="icon">`;
 }
 
 //  AUTO-RESUME 

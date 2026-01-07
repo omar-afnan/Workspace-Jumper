@@ -455,17 +455,23 @@ function getDashboardHtml(webview, context, rows) {
 			.path { color: #94a3b8; font-size: 12px; margin-bottom: 8px }
 			.actions { display: flex; gap: 8px }
 			button { background: #3b82f6; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer }
-			.footer { margin-top: 12px; display:flex; gap:10px }
-			.small { background: #334155; padding:8px 10px; border-radius:8px }
+			.footer {
+            margin-top: 12px;
+            display:flex;
+            gap:10px }
+			.small {
+            background: #334155;
+            padding:8px 10px;
+            border-radius:8px }
 		</style>
 	</head>
 	<body>
-		<h2>🧭 WorkSnap</h2>
+		<h2> WorkSnap</h2>
 		<p>Jump between workspaces instantly</p>
 		${rows || '<p>No workspaces saved.</p>'}
 		<div class="footer">
-			<button class="small" onclick="addCurrent()">➕ Add Current Workspace</button>
-			<button class="small" onclick="clearAll()">🧹 Clear History</button>
+			<button class="small" onclick="addCurrent()"> Add Current Workspace</button>
+			<button class="small" onclick="clearAll()"> Clear History</button>
 		</div>
 		<script>
 			const vscode = acquireVsCodeApi();

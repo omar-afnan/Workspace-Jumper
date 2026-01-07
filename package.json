@@ -160,5 +160,8 @@
     "esbuild": "^0.27.2",
     "sharp": "^0.32.0",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@vscode/codicons": "^0.0.44"
   }
 }
