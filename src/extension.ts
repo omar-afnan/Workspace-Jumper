@@ -335,10 +335,10 @@ export function activate(context: vscode.ExtensionContext) {
 							<button class="btn-primary" data-path="${encodeURIComponent(decrypted)}" onclick="resume(this)">
 								<span class="codicon codicon-play"></span> Open
 							</button>
-							<button class="btn-secondary" onclick="edit('${ws.id}')">
+							<button class="btn-icon" onclick="edit('${ws.id}')" title="Edit">
 								<span class="codicon codicon-edit"></span>
 							</button>
-							<button class="btn-danger" onclick="remove('${ws.id}')">
+							<button class="btn-icon btn-icon-danger" onclick="remove('${ws.id}')" title="Delete">
 								<span class="codicon codicon-trash"></span>
 							</button>
 						</div>
@@ -681,6 +681,26 @@ function getDashboardHtml(webview: vscode.Webview, context: vscode.ExtensionCont
 			.btn-danger:hover {
 				background: rgba(245, 127, 0, 0.2);
 				opacity: 1;
+			}
+
+			.btn-icon {
+				background: var(--vscode-button-secondaryBackground);
+				color: var(--vscode-button-secondaryForeground);
+				padding: 6px 8px;
+				min-width: 32px;
+				justify-content: center;
+			}
+
+			.btn-icon:hover {
+				background: var(--vscode-button-secondaryHoverBackground);
+			}
+
+			.btn-icon-danger {
+				color: var(--vscode-errorForeground);
+			}
+
+			.btn-icon-danger:hover {
+				background: rgba(244, 67, 54, 0.2);
 			}
 
 			.footer {
