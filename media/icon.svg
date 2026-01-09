@@ -1,12 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <g fill="none" stroke="#007acc" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
-    <!-- Left folder -->
-    <path d="M 20 45 L 20 95 Q 20 105 30 105 L 55 105 Q 65 105 65 95 L 65 55 Q 65 45 55 45 L 38 45 L 33 38 Q 28 32 20 32 Z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <!-- Clean monochrome workspace switcher icon -->
+  <g fill="currentColor">
+    <!-- Back folder -->
+    <path d="M1.5 4h4l1-1h5.5c.55 0 1 .45 1 1v1h-11v-1z" opacity="0.6" />
+    <path
+      d="M1.5 5v7c0 .55.45 1 1 1h5c.55 0 1-.45 1-1v-5c0-.55-.45-1-1-1h-2l-.5-.5h-2.5c-.55 0-1 .45-1 1z"
+      opacity="0.6" />
 
-    <!-- Right folder (offset) -->
-    <path d="M 50 50 L 50 100 Q 50 110 60 110 L 100 110 Q 110 110 110 100 L 110 60 Q 110 50 100 50 L 78 50 L 73 43 Q 68 37 60 37 Z"/>
+    <!-- Front folder -->
+    <path
+      d="M7 7h5.5l1-1h1.5c.55 0 1 .45 1 1v5c0 .55-.45 1-1 1h-6c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1z" />
+
+    <!-- Arrow -->
+    <path d="M4.5 9.5h4m-1-1l1 1-1 1" stroke="currentColor" stroke-width="1" fill="none"
+      stroke-linecap="round" />
   </g>
-
-  <!-- Arrow indicating switch/jump -->
-  <path d="M 35 68 L 85 68 M 75 58 L 85 68 L 75 78" fill="none" stroke="#28a745" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
