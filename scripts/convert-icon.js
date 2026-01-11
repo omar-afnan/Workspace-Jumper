@@ -1,7 +1,8 @@
 const sharp = require('sharp');
 const fs = require('fs');
 
-const input = 'media/icon.svg';
+// Use colorful marketplace icon for PNG (marketplace allows colors)
+const input = 'media/icon-marketplace.svg';
 const output = 'media/icon.png';
 
 if (!fs.existsSync(input)) {
