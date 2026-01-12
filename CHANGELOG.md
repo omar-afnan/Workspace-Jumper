@@ -2,6 +2,19 @@
 
 All notable changes to WorkSnap will be documented in this file.
 
+## [1.1.7] - 2024-01-12
+
+### Fixed
+- Fixed README.md encoding issue that caused garbled text on VS Code Marketplace
+- Improved sidebar CSS for narrow panel widths - layout now adapts gracefully
+- Added responsive breakpoints for very narrow sidebars (text wrapping, icon-only mode)
+- Reduced padding and font sizes for better space efficiency
+- Fixed word-wrap issues for long workspace names and paths
+
+### Changed
+- Optimized CSS for better performance on narrow sidebar panels
+- Improved visual consistency across different sidebar widths
+
 ## [1.1.5] - 2024-01-09
 
 ### 🐛 Fixed - CRITICAL Production Issues
@@ -47,6 +60,7 @@ All notable changes to WorkSnap will be documented in this file.
 
 ## Version History Summary
 
+- **1.1.7** - Responsive CSS fixes, README encoding fix
 - **1.1.5** - Production fixes (icons, activation, sidebar rendering)
 - **1.1.4** - Icon path fixes
 - **1.1.3** - Initial release

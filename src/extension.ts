@@ -574,32 +574,41 @@ function getDashboardHtml(webview: vscode.Webview, context: vscode.ExtensionCont
 				font-family: var(--vscode-font-family);
 				background: var(--vscode-sideBar-background);
 				color: var(--vscode-foreground);
-				padding: 12px;
+				padding: 8px;
 				font-size: 13px;
+				min-width: 0;
+				overflow-x: hidden;
 			}
 
 			.header {
-				margin-bottom: 16px;
+				margin-bottom: 12px;
 			}
 
 			.header h2 {
-				font-size: 14px;
+				font-size: 13px;
 				font-weight: 600;
-				margin-bottom: 4px;
+				margin-bottom: 2px;
 				color: var(--vscode-foreground);
+				display: flex;
+				align-items: center;
+				flex-wrap: nowrap;
+				white-space: nowrap;
+				overflow: hidden;
 			}
 
 			.header p {
-				font-size: 12px;
+				font-size: 11px;
 				color: var(--vscode-descriptionForeground);
 			}
 
 			.card {
 				background: var(--vscode-editor-background);
 				border: 1px solid var(--vscode-panel-border);
-				padding: 12px;
-				margin-bottom: 8px;
+				padding: 10px;
+				margin-bottom: 6px;
 				border-radius: 4px;
+				min-width: 0;
+				overflow: hidden;
 			}
 
 			.card:hover {
@@ -607,45 +616,64 @@ function getDashboardHtml(webview: vscode.Webview, context: vscode.ExtensionCont
 			}
 
 			.card-header {
-				margin-bottom: 8px;
+				margin-bottom: 6px;
+				min-width: 0;
 			}
 
 			.title {
 				display: flex;
-				align-items: center;
+				align-items: flex-start;
 				gap: 6px;
 				font-weight: 600;
-				font-size: 13px;
-				margin-bottom: 4px;
+				font-size: 12px;
+				margin-bottom: 2px;
+				min-width: 0;
+			}
+
+			.title .codicon {
+				flex-shrink: 0;
 			}
 
 			.workspace-name {
 				flex: 1;
+				min-width: 0;
+				word-wrap: break-word;
+				overflow-wrap: break-word;
+				hyphens: auto;
 			}
 
 			.path {
 				color: var(--vscode-descriptionForeground);
-				font-size: 11px;
-				margin-bottom: 10px;
+				font-size: 10px;
+				margin-bottom: 8px;
 				padding-left: 20px;
+				word-wrap: break-word;
+				overflow-wrap: break-word;
+				hyphens: auto;
+				min-width: 0;
 			}
 
 			.actions {
 				display: flex;
-				gap: 6px;
+				gap: 4px;
+				flex-wrap: wrap;
+				min-width: 0;
 			}
 
 			button {
-				display: flex;
+				display: inline-flex;
 				align-items: center;
+				justify-content: center;
 				gap: 4px;
 				border: none;
-				padding: 6px 10px;
+				padding: 5px 8px;
 				border-radius: 2px;
 				cursor: pointer;
-				font-size: 12px;
+				font-size: 11px;
 				font-family: var(--vscode-font-family);
 				transition: background 0.1s;
+				white-space: nowrap;
+				min-width: 0;
 			}
 
 			button:hover {
@@ -655,7 +683,8 @@ function getDashboardHtml(webview: vscode.Webview, context: vscode.ExtensionCont
 			.btn-primary {
 				background: var(--vscode-button-background);
 				color: var(--vscode-button-foreground);
-				flex: 1;
+				flex: 1 1 auto;
+				min-width: 60px;
 			}
 
 			.btn-primary:hover {
@@ -675,7 +704,7 @@ function getDashboardHtml(webview: vscode.Webview, context: vscode.ExtensionCont
 				background: transparent;
 				color: var(--vscode-errorForeground);
 				border: none;
-				padding: 4px 8px;
+				padding: 4px 6px;
 			}
 
 			.btn-danger:hover {
@@ -686,9 +715,9 @@ function getDashboardHtml(webview: vscode.Webview, context: vscode.ExtensionCont
 			.btn-icon {
 				background: var(--vscode-button-secondaryBackground);
 				color: var(--vscode-button-secondaryForeground);
-				padding: 6px 8px;
-				min-width: 32px;
-				justify-content: center;
+				padding: 5px 6px;
+				min-width: 28px;
+				flex-shrink: 0;
 			}
 
 			.btn-icon:hover {
@@ -704,10 +733,10 @@ function getDashboardHtml(webview: vscode.Webview, context: vscode.ExtensionCont
 			}
 
 			.footer {
-				margin-top: 12px;
+				margin-top: 10px;
 				display: flex;
 				flex-direction: column;
-				gap: 6px;
+				gap: 4px;
 			}
 
 			.footer button {
@@ -715,6 +744,8 @@ function getDashboardHtml(webview: vscode.Webview, context: vscode.ExtensionCont
 				justify-content: center;
 				background: var(--vscode-button-secondaryBackground);
 				color: var(--vscode-button-secondaryForeground);
+				font-size: 11px;
+				padding: 6px 8px;
 			}
 
 			.footer button:hover {
@@ -723,14 +754,72 @@ function getDashboardHtml(webview: vscode.Webview, context: vscode.ExtensionCont
 
 			.empty-state {
 				text-align: center;
-				padding: 24px 16px;
+				padding: 20px 12px;
 				color: var(--vscode-descriptionForeground);
 			}
 
 			.empty-state .codicon {
-				font-size: 48px;
-				margin-bottom: 12px;
+				font-size: 36px;
+				margin-bottom: 10px;
 				opacity: 0.5;
+			}
+
+			/* Responsive adjustments for very narrow sidebars */
+			@media (max-width: 200px) {
+				body {
+					padding: 6px;
+				}
+
+				.header h2 {
+					font-size: 12px;
+				}
+
+				.card {
+					padding: 8px;
+				}
+
+				.title {
+					font-size: 11px;
+				}
+
+				.path {
+					font-size: 9px;
+					padding-left: 0;
+				}
+
+				.actions {
+					flex-direction: column;
+					gap: 4px;
+				}
+
+				.btn-primary {
+					width: 100%;
+				}
+
+				.btn-icon {
+					min-width: 24px;
+					padding: 4px;
+				}
+
+				button .btn-text {
+					display: none;
+				}
+			}
+
+			/* Hide button text on small widths, show only icons */
+			@media (max-width: 160px) {
+				.btn-primary .codicon + span,
+				.footer button .codicon + span {
+					display: none;
+				}
+
+				.header p {
+					display: none;
+				}
+
+				.path {
+					display: none;
+				}
 			}
 		</style>
 	</head>
