@@ -2,6 +2,11 @@
 
 All notable changes to WorkSnap will be documented in this file.
 
+## [1.2.1] - 2026-05-14
+
+### Changed
+- Version bump for marketplace publish
+
 ## [1.1.9] - 2024-01-12
 
 ### Fixed

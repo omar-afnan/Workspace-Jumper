@@ -2,7 +2,7 @@
   "name": "workspace-jumper",
   "displayName": "WorkSnap - Workspace Manager",
   "description": "A privacy first VS Code workspace manager. Switch between projects instantly with AES-256-GCM encrypted history, auto-resume sessions, and full offline functionality. No tracking, no telemetry.",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "publisher": "omara",
   "repository": {
     "type": "git",
