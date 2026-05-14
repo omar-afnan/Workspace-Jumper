@@ -1,8 +1,8 @@
 {
   "name": "workspace-jumper",
-  "displayName": "WorkSnap - Workspace Manager",
+  "displayName": "SpaceShift - Workspace Manager",
   "description": "A privacy first VS Code workspace manager. Switch between projects instantly with AES-256-GCM encrypted history, auto-resume sessions, and full offline functionality. No tracking, no telemetry.",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "publisher": "omara",
   "repository": {
     "type": "git",
@@ -36,39 +36,39 @@
       {
         "command": "workspace-jumper.jump",
         "title": "Jump to Workspace",
-        "category": "WorkSnap"
+        "category": "SpaceShift"
       },
       {
         "command": "workspace-jumper.editWorkspace",
         "title": "Edit Workspace (Nickname/Sensitive)",
-        "category": "WorkSnap"
+        "category": "SpaceShift"
       },
       {
         "command": "workspace-jumper.removeWorkspace",
         "title": "Remove Workspace from History",
-        "category": "WorkSnap"
+        "category": "SpaceShift"
       },
       {
         "command": "workspace-jumper.clearHistory",
         "title": "Clear All Workspace History",
-        "category": "WorkSnap"
+        "category": "SpaceShift"
       },
       {
         "command": "workspace-jumper.toggleSensitive",
         "title": "Toggle Sensitive Flag on Current Workspace",
-        "category": "WorkSnap"
+        "category": "SpaceShift"
       },
       {
         "command": "worksnap.openDashboard",
-        "title": "WorkSnap: Open Dashboard",
-        "category": "WorkSnap"
+        "title": "SpaceShift: Open Dashboard",
+        "category": "SpaceShift"
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
           "id": "worksnap",
-          "title": "WorkSnap",
+          "title": "SpaceShift",
           "icon": "media/icon.svg"
         }
       ]
@@ -77,15 +77,15 @@
       "worksnap": [
         {
           "id": "worksnap.sidebarView",
-          "name": "WorkSnap Dashboard",
+          "name": "SpaceShift Dashboard",
           "type": "webview",
           "icon": "media/icon.svg",
-          "contextualTitle": "WorkSnap"
+          "contextualTitle": "SpaceShift"
         }
       ]
     },
     "configuration": {
-      "title": "WorkSnap",
+      "title": "SpaceShift",
       "properties": {
         "worksnap.autoResumeEnabled": {
           "type": "boolean",

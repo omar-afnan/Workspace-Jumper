@@ -169,8 +169,8 @@ function getDashboardHtml(
 <body>
 	<div class="header">
 		<h2>
-			<img src="${clipboardIconUri}" width="24" height="24" style="vertical-align:middle;margin-right:8px;display:inline-block" alt="WorkSnap">
-			WorkSnap
+			<img src="${clipboardIconUri}" width="24" height="24" style="vertical-align:middle;margin-right:8px;display:inline-block" alt="SpaceShift">
+			SpaceShift
 		</h2>
 		<p>Jump between workspaces instantly</p>
 	</div>
@@ -217,14 +217,14 @@ async function handleWebviewMessage(
 		case 'clear':
 			await context.globalState.update(STORAGE_KEY, []);
 			await refresh();
-			vscode.window.showInformationMessage('WorkSnap: All workspace history cleared');
+			vscode.window.showInformationMessage('SpaceShift: All workspace history cleared');
 			break;
 
 		case 'remove': {
 			const list = context.globalState.get<WorkspaceSession[]>(STORAGE_KEY, []);
 			await context.globalState.update(STORAGE_KEY, list.filter(w => w.id !== msg.id));
 			await refresh();
-			vscode.window.showInformationMessage('WorkSnap: Workspace removed');
+			vscode.window.showInformationMessage('SpaceShift: Workspace removed');
 			break;
 		}
 
@@ -239,7 +239,7 @@ async function handleWebviewMessage(
 			const list = context.globalState.get<WorkspaceSession[]>(STORAGE_KEY, []);
 			const existing = list.find(ws => decrypt(ws.encryptedPath, key) === folderPath);
 			if (existing) {
-				vscode.window.showInformationMessage(`WorkSnap: "${existing.nickname}" is already in your workspace history`);
+				vscode.window.showInformationMessage(`SpaceShift: "${existing.nickname}" is already in your workspace history`);
 				return;
 			}
 			const nickname = await vscode.window.showInputBox({
@@ -258,7 +258,7 @@ async function handleWebviewMessage(
 			const maxHistory = vscode.workspace.getConfiguration('worksnap').get<number>('maxHistory', MAX_HISTORY);
 			await context.globalState.update(STORAGE_KEY, [newSession, ...list].slice(0, maxHistory));
 			await refresh();
-			vscode.window.showInformationMessage(`WorkSnap: Added "${nickname}" to workspace history`);
+			vscode.window.showInformationMessage(`SpaceShift: Added "${nickname}" to workspace history`);
 			break;
 		}
 
@@ -289,7 +289,7 @@ async function handleWebviewMessage(
 
 			await context.globalState.update(STORAGE_KEY, list);
 			await refresh();
-			vscode.window.showInformationMessage('WorkSnap: Workspace updated');
+			vscode.window.showInformationMessage('SpaceShift: Workspace updated');
 			break;
 		}
 	}
@@ -297,7 +297,7 @@ async function handleWebviewMessage(
 
 // ─── SIDEBAR VIEW PROVIDER ─────────────────────────────────────────────────────
 
-class WorkSnapViewProvider implements vscode.WebviewViewProvider {
+class SpaceShiftViewProvider implements vscode.WebviewViewProvider {
 	private _view?: vscode.WebviewView;
 
 	constructor(private readonly ctx: vscode.ExtensionContext) {
@@ -335,7 +335,7 @@ class WorkSnapViewProvider implements vscode.WebviewViewProvider {
 async function openDashboard(context: vscode.ExtensionContext): Promise<void> {
 	const panel = vscode.window.createWebviewPanel(
 		'worksnapDashboard',
-		'WorkSnap',
+		'SpaceShift',
 		vscode.ViewColumn.One,
 		{
 			enableScripts: true,
@@ -369,7 +369,7 @@ export function activate(context: vscode.ExtensionContext): void {
 	getEncryptionKey(secrets).catch(err => { console.error('Failed to preload encryption key:', err); });
 
 	const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-	statusBar.text = '$(briefcase) WorkSnap';
+	statusBar.text = '$(briefcase) SpaceShift';
 	statusBar.tooltip = 'Jump to Workspace (Ctrl+Alt+W)';
 	statusBar.command = 'workspace-jumper.jump';
 	statusBar.show();
@@ -407,7 +407,7 @@ export function activate(context: vscode.ExtensionContext): void {
 		})
 	);
 
-	const provider = new WorkSnapViewProvider(context);
+	const provider = new SpaceShiftViewProvider(context);
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider('worksnap.sidebarView', provider, {
 			webviewOptions: { retainContextWhenHidden: true }
@@ -422,7 +422,7 @@ export function activate(context: vscode.ExtensionContext): void {
 			const scheduleReload = () => {
 				if (reloadTimer) { clearTimeout(reloadTimer); }
 				reloadTimer = setTimeout(async () => {
-					vscode.window.showInformationMessage('WorkSnap: source changed — reloading...');
+					vscode.window.showInformationMessage('SpaceShift: source changed — reloading...');
 					await vscode.commands.executeCommand('workbench.action.reloadWindow');
 				}, 600);
 			};

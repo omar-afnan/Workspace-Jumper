@@ -1,6 +1,11 @@
 # Change Log
 
-All notable changes to WorkSnap will be documented in this file.
+All notable changes to SpaceShift will be documented in this file.
+
+## [1.2.2] - 2026-05-14
+
+### Changed
+- Renamed extension from WorkSnap to SpaceShift
 
 ## [1.2.1] - 2026-05-14
 

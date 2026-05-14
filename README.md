@@ -1,8 +1,8 @@
-# WorkSnap - Workspace Manager
+# SpaceShift - Workspace Manager
 
-WorkSnap is a VS Code extension that makes switching between projects fast, secure, and hassle-free. It lets you jump between workspaces instantly while keeping your workspace history encrypted and fully private.
+SpaceShift is a VS Code extension that makes switching between projects fast, secure, and hassle-free. It lets you jump between workspaces instantly while keeping your workspace history encrypted and fully private.
 
-You can switch to any saved workspace with a simple keyboard shortcut, and WorkSnap automatically remembers and restores your last session. All workspace paths are protected using strong AES-256-GCM encryption, and everything works completely offline - no tracking, no telemetry, and no network requests.
+You can switch to any saved workspace with a simple keyboard shortcut, and SpaceShift automatically remembers and restores your last session. All workspace paths are protected using strong AES-256-GCM encryption, and everything works completely offline - no tracking, no telemetry, and no network requests.
 
 The extension also gives you full control over your workspace history. You can rename workspaces, mark sensitive ones, remove entries, or clear history whenever you want. A clean dashboard UI is available through the Activity Bar, Status Bar, or Command Palette, making workspace management quick and intuitive.
 
@@ -23,7 +23,7 @@ The extension also gives you full control over your workspace history. You can r
 ### From VS Code Marketplace (Recommended)
 1. Open VS Code
 2. Go to Extensions (`Ctrl+Shift+X`)
-3. Search for "WorkSnap"
+3. Search for "SpaceShift"
 4. Click Install
 
 ### From VSIX
