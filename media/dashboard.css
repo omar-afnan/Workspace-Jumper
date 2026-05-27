@@ -4,7 +4,7 @@
 	box-sizing: border-box;
 }
 
-/* ─── BODY ───────────────────────────────────────────────────────────────── */
+/*  BODY  */
 body {
 	font-family: var(--vscode-font-family);
 	background: var(--vscode-sideBar-background);
@@ -16,7 +16,7 @@ body {
 	line-height: 1.4;
 }
 
-/* ─── HEADER ─────────────────────────────────────────────────────────────── */
+/*  HEADER  */
 .header {
 	margin-bottom: 16px;
 	padding-bottom: 12px;
@@ -48,7 +48,7 @@ body {
 	opacity: 0.85;
 }
 
-/* ─── WORKSPACE CARD ─────────────────────────────────────────────────────── */
+/*  WORKSPACE CARD ─ */
 .card {
 	background: var(--vscode-editor-background);
 	border: 1px solid var(--vscode-panel-border);
@@ -71,7 +71,7 @@ body {
 	min-width: 0;
 }
 
-/* ─── CARD TITLE ─────────────────────────────────────────────────────────── */
+/*  CARD TITLE ── */
 .title {
 	display: flex;
 	align-items: center;
@@ -106,7 +106,7 @@ body {
 	font-size: 12px;
 }
 
-/* ─── PATH ───────────────────────────────────────────────────────────────── */
+/*  PATH ── */
 .path {
 	color: var(--vscode-descriptionForeground);
 	font-size: 10px;
@@ -120,7 +120,7 @@ body {
 	line-height: 1.4;
 }
 
-/* ─── ACTION BUTTONS ROW ─────────────────────────────────────────────────── */
+/*  ACTION BUTTONS ROW  */
 .actions {
 	display: flex;
 	gap: 6px;
@@ -128,7 +128,7 @@ body {
 	min-width: 0;
 }
 
-/* ─── BASE BUTTON ────────────────────────────────────────────────────────── */
+/*  BASE BUTTON ─ */
 button {
 	display: inline-flex;
 	align-items: center;
@@ -154,7 +154,7 @@ button:active {
 	transform: scale(0.97);
 }
 
-/* ─── PRIMARY BUTTON (Open) ──────────────────────────────────────────────── */
+/*  PRIMARY BUTTON (Open)  */
 .btn-primary {
 	background: var(--vscode-button-background);
 	color: var(--vscode-button-foreground);
@@ -168,7 +168,7 @@ button:active {
 	background: var(--vscode-button-hoverBackground);
 }
 
-/* ─── SECONDARY BUTTON ───────────────────────────────────────────────────── */
+/*  SECONDARY BUTTON  */
 .btn-secondary {
 	background: var(--vscode-button-secondaryBackground);
 	color: var(--vscode-button-secondaryForeground);
@@ -178,7 +178,7 @@ button:active {
 	background: var(--vscode-button-secondaryHoverBackground);
 }
 
-/* ─── ICON BUTTONS (Edit, Delete) ────────────────────────────────────────── */
+/*  ICON BUTTONS (Edit, Delete) */
 .btn-icon {
 	background: var(--vscode-button-secondaryBackground);
 	color: var(--vscode-button-secondaryForeground);
@@ -205,7 +205,7 @@ button:active {
 	color: var(--vscode-errorForeground);
 }
 
-/* ─── FOOTER ─────────────────────────────────────────────────────────────── */
+/*  FOOTER  */
 .footer {
 	margin-top: 14px;
 	padding-top: 12px;
@@ -234,7 +234,7 @@ button:active {
 	font-size: 14px;
 }
 
-/* ─── EMPTY STATE ────────────────────────────────────────────────────────── */
+/*  EMPTY STATE ─ */
 .empty-state {
 	text-align: center;
 	padding: 32px 16px;
@@ -254,7 +254,7 @@ button:active {
 	line-height: 1.5;
 }
 
-/* ─── RESPONSIVE: NARROW SIDEBAR ─────────────────────────────────────────── */
+/*  RESPONSIVE: NARROW SIDEBAR ─ */
 @media (max-width: 200px) {
 	body {
 		padding: 6px;
@@ -302,7 +302,7 @@ button:active {
 	}
 }
 
-/* ─── RESPONSIVE: VERY NARROW ────────────────────────────────────────────── */
+/*  RESPONSIVE: VERY NARROW ─ */
 @media (max-width: 160px) {
 	.header p {
 		display: none;

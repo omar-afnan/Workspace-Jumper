@@ -145,7 +145,7 @@ function getDashboardHtml(
 		vscode.Uri.joinPath(context.extensionUri, 'media', 'Clipboard-Task-Pending-Action--Streamline-Plump.png')
 	);
 
-	const cssPath = path.join(context.extensionPath, 'src', 'dashboard.css');
+	const cssPath = path.join(context.extensionPath, 'media', 'dashboard.css');
 	const css = fs.existsSync(cssPath) ? fs.readFileSync(cssPath, 'utf8') : '';
 
 	const emptyState = `
