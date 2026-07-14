@@ -2,7 +2,7 @@
   "name": "workspace-jumper",
   "displayName": "SpaceShift - Workspace Manager",
   "description": "A privacy first VS Code workspace manager. Switch between projects instantly with AES-256-GCM encrypted history, auto-resume sessions, and full offline functionality. No tracking, no telemetry.",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "publisher": "omara",
   "repository": {
     "type": "git",
@@ -150,6 +150,8 @@
     "watch:tsc": "tsc -w -p tsconfig.json",
     "watch:esbuild": "node esbuild.js --watch",
     "pretest": "npm run compile",
+    "test:unit": "npm run compile && node --test dist/test/utils.test.js",
+
     "verify": "node scripts/verify-package.js",
     "package": "npm run verify && vsce package",
     "publish": "npm run verify && vsce publish",
