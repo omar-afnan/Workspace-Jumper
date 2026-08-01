@@ -52,6 +52,10 @@ export function generateId(): string {
 	return crypto.randomBytes(8).toString('hex');
 }
 
+export function generateNonce(): string {
+	return crypto.randomBytes(16).toString('base64');
+}
+
 // ─── HTML HELPERS ──────────────────────────────────────────────────────────────
 
 export function escapeHtml(input: string): string {
@@ -59,11 +63,48 @@ export function escapeHtml(input: string): string {
 	return input.replace(/[&<>"']/g, (c) => map[c] ?? c);
 }
 
-export function buildCardHtml(ws: WorkspaceSession, decrypted: string): string {
+/**
+ * Health of a stored workspace entry, decided by the caller (which has fs access).
+ * - `ok`       — path decrypted and exists on disk
+ * - `missing`  — path decrypted but the folder is gone (moved/deleted)
+ * - `undecryptable` — decryption failed, usually a lost/rotated SecretStorage key
+ */
+export type WorkspaceStatus = 'ok' | 'missing' | 'undecryptable';
+
+export function buildCardHtml(
+	ws: WorkspaceSession,
+	decrypted: string,
+	status: WorkspaceStatus = 'ok'
+): string {
 	const displayPath = decrypted.split(/[\\/]/).slice(-2).join('/');
 	const lockIcon = ws.isSensitive ? '<span class="codicon codicon-lock sensitive-icon"></span>' : '';
+
+	// Buttons are wired up by delegated listeners in the webview script (see
+	// getDashboardHtml). Inline on* handlers cannot be used under the CSP, and
+	// an inline `onclick="remove(...)"` would in any case resolve to
+	// Element.prototype.remove rather than our own function.
+	const idAttr = escapeHtml(ws.id);
+
+	const openButton = status === 'ok'
+		? `<button class="btn-primary" data-action="resume" data-path="${encodeURIComponent(decrypted)}">
+					<span class="codicon codicon-play"></span> Open
+				</button>`
+		: `<button class="btn-primary" disabled title="${status === 'missing' ? 'Folder no longer exists on disk' : 'Path could not be decrypted'}">
+					<span class="codicon codicon-play"></span> Open
+				</button>`;
+
+	const warning = status === 'missing'
+		? `<div class="card-warning"><span class="codicon codicon-warning"></span> Folder no longer exists on disk</div>`
+		: status === 'undecryptable'
+			? `<div class="card-warning"><span class="codicon codicon-warning"></span> Could not decrypt this path &mdash; remove it and re-add the workspace</div>`
+			: '';
+
+	const pathRow = status === 'undecryptable'
+		? '<div class="path path-unavailable">path unavailable</div>'
+		: `<div class="path">${escapeHtml(displayPath)}</div>`;
+
 	return `
-		<div class="card">
+		<div class="card${status === 'ok' ? '' : ' card-broken'}">
 			<div class="card-header">
 				<div class="title">
 					<span class="codicon codicon-folder"></span>
@@ -71,15 +112,14 @@ export function buildCardHtml(ws: WorkspaceSession, decrypted: string): string {
 					${lockIcon}
 				</div>
 			</div>
-			<div class="path">${escapeHtml(displayPath)}</div>
+			${pathRow}
+			${warning}
 			<div class="actions">
-				<button class="btn-primary" data-path="${encodeURIComponent(decrypted)}" onclick="resume(this)">
-					<span class="codicon codicon-play"></span> Open
-				</button>
-				<button class="btn-icon" onclick="edit('${ws.id}')" title="Edit">
+				${openButton}
+				<button class="btn-icon" data-action="edit" data-id="${idAttr}" title="Edit">
 					<span class="codicon codicon-edit"></span>
 				</button>
-				<button class="btn-icon btn-icon-danger" onclick="remove('${ws.id}')" title="Delete">
+				<button class="btn-icon btn-icon-danger" data-action="remove" data-id="${idAttr}" title="Delete">
 					<span class="codicon codicon-trash"></span>
 				</button>
 			</div>

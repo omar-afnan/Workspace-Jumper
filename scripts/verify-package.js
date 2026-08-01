@@ -12,7 +12,7 @@ const errors = [];
 const warnings = [];
 const success = [];
 
-console.log('🔍 Verifying WorkSnap package...\n');
+console.log('🔍 Verifying Warpspace package...\n');
 
 // Check 1: package.json exists and is valid
 try {
@@ -77,8 +77,15 @@ if (fs.existsSync('node_modules/@vscode/codicons')) {
 if (fs.existsSync('.vscodeignore')) {
   const vscodeignore = fs.readFileSync('.vscodeignore', 'utf8');
   
-  if (vscodeignore.includes('!node_modules/@vscode/codicons/**')) {
-    success.push('✅ .vscodeignore includes codicons exception');
+  // The webview loads codicon.css, which in turn requests codicon.ttf.
+  // Both must survive the node_modules/** ignore or icons break in production.
+  const hasCss = vscodeignore.includes('!node_modules/@vscode/codicons/dist/codicon.css')
+    || vscodeignore.includes('!node_modules/@vscode/codicons/**');
+  const hasFont = vscodeignore.includes('!node_modules/@vscode/codicons/dist/codicon.ttf')
+    || vscodeignore.includes('!node_modules/@vscode/codicons/**');
+
+  if (hasCss && hasFont) {
+    success.push('✅ .vscodeignore keeps codicon.css and codicon.ttf');
   } else {
     errors.push('❌ .vscodeignore missing codicons exception - icons won\'t work in production!');
   }

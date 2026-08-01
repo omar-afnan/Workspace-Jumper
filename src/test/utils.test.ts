@@ -5,6 +5,7 @@ import {
 	decrypt,
 	generateEncryptionKey,
 	generateId,
+	generateNonce,
 	escapeHtml,
 	buildCardHtml,
 	WorkspaceSession
@@ -87,6 +88,12 @@ describe('generateEncryptionKey / generateId', () => {
 	test('generateId is not deterministic', () => {
 		assert.notEqual(generateId(), generateId());
 	});
+
+	test('generateNonce returns base64 and is not deterministic', () => {
+		const nonce = generateNonce();
+		assert.match(nonce, /^[A-Za-z0-9+/]+={0,2}$/);
+		assert.notEqual(generateNonce(), generateNonce());
+	});
 });
 
 describe('escapeHtml', () => {
@@ -138,5 +145,62 @@ describe('buildCardHtml', () => {
 	test('URL-encodes the decrypted path used for the "Open" button', () => {
 		const html = buildCardHtml(baseWs, 'C:\\Users\\dev\\my project');
 		assert.ok(html.includes(encodeURIComponent('C:\\Users\\dev\\my project')));
+	});
+
+	test('uses data-action attributes rather than inline on* handlers', () => {
+		// Inline handlers are blocked by the webview CSP, and an inline
+		// onclick="remove(...)" would resolve to Element.prototype.remove
+		// instead of our handler - silently breaking the delete button.
+		const html = buildCardHtml(baseWs, 'C:\\Users\\dev\\proj');
+		assert.ok(!html.includes('onclick'));
+		assert.ok(html.includes('data-action="resume"'));
+		assert.ok(html.includes('data-action="edit"'));
+		assert.ok(html.includes('data-action="remove"'));
+	});
+
+	test('carries the workspace id on the edit and remove buttons', () => {
+		const html = buildCardHtml(baseWs, 'C:\\p');
+		assert.ok(html.includes('data-action="edit" data-id="abc123"'));
+		assert.ok(html.includes('data-action="remove" data-id="abc123"'));
+	});
+
+	test('escapes the id so a crafted entry cannot break out of the attribute', () => {
+		const html = buildCardHtml({ ...baseWs, id: '" onload="alert(1)' }, 'C:\\p');
+		// The quotes must be neutralised, which leaves `onload=` as inert text
+		// inside the attribute value rather than a new attribute.
+		assert.ok(html.includes('data-id="&quot; onload=&quot;alert(1)"'));
+		assert.ok(!html.includes('onload="alert(1)"'));
+	});
+
+	describe('status handling', () => {
+		test('an ok entry has an enabled Open button and no warning', () => {
+			const html = buildCardHtml(baseWs, 'C:\\Users\\dev\\proj', 'ok');
+			assert.ok(!html.includes('disabled'));
+			assert.ok(!html.includes('card-warning'));
+			assert.ok(!html.includes('card-broken'));
+		});
+
+		test('a missing folder disables Open and explains why', () => {
+			const html = buildCardHtml(baseWs, 'C:\\Users\\dev\\gone', 'missing');
+			assert.ok(html.includes('disabled'));
+			assert.ok(html.includes('card-broken'));
+			assert.ok(html.includes('no longer exists on disk'));
+			// The dead path must not be wired up as an openable target.
+			assert.ok(!html.includes('data-action="resume"'));
+		});
+
+		test('an undecryptable entry hides the path and disables Open', () => {
+			const html = buildCardHtml(baseWs, '', 'undecryptable');
+			assert.ok(html.includes('disabled'));
+			assert.ok(html.includes('path-unavailable'));
+			assert.ok(html.includes('Could not decrypt'));
+			assert.ok(!html.includes('data-action="resume"'));
+		});
+
+		test('a broken entry can still be edited and removed', () => {
+			const html = buildCardHtml(baseWs, '', 'undecryptable');
+			assert.ok(html.includes('data-action="edit"'));
+			assert.ok(html.includes('data-action="remove"'));
+		});
 	});
 });

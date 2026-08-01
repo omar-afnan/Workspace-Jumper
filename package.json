@@ -1,9 +1,10 @@
 {
   "name": "workspace-jumper",
-  "displayName": "SpaceShift - Workspace Manager",
-  "description": "A privacy first VS Code workspace manager. Switch between projects instantly with AES-256-GCM encrypted history, auto-resume sessions, and full offline functionality. No tracking, no telemetry.",
-  "version": "1.2.4",
+  "displayName": "Warpspace - Workspace Manager",
+  "description": "A privacy first VS Code workspace manager. Warp between projects instantly with AES-256-GCM encrypted history, auto-resume sessions, and full offline functionality. No tracking, no telemetry.",
+  "version": "1.3.0",
   "publisher": "omara",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/omar-afnan/workspace-jumper"
@@ -15,6 +16,7 @@
     "Other"
   ],
   "keywords": [
+    "warpspace",
     "workspace",
     "workspace manager",
     "workspace switcher",
@@ -36,39 +38,39 @@
       {
         "command": "workspace-jumper.jump",
         "title": "Jump to Workspace",
-        "category": "SpaceShift"
+        "category": "Warpspace"
       },
       {
         "command": "workspace-jumper.editWorkspace",
         "title": "Edit Workspace (Nickname/Sensitive)",
-        "category": "SpaceShift"
+        "category": "Warpspace"
       },
       {
         "command": "workspace-jumper.removeWorkspace",
         "title": "Remove Workspace from History",
-        "category": "SpaceShift"
+        "category": "Warpspace"
       },
       {
         "command": "workspace-jumper.clearHistory",
         "title": "Clear All Workspace History",
-        "category": "SpaceShift"
+        "category": "Warpspace"
       },
       {
         "command": "workspace-jumper.toggleSensitive",
         "title": "Toggle Sensitive Flag on Current Workspace",
-        "category": "SpaceShift"
+        "category": "Warpspace"
       },
       {
         "command": "worksnap.openDashboard",
-        "title": "SpaceShift: Open Dashboard",
-        "category": "SpaceShift"
+        "title": "Open Dashboard",
+        "category": "Warpspace"
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
           "id": "worksnap",
-          "title": "SpaceShift",
+          "title": "Warpspace",
           "icon": "media/icon.svg"
         }
       ]
@@ -77,15 +79,15 @@
       "worksnap": [
         {
           "id": "worksnap.sidebarView",
-          "name": "SpaceShift Dashboard",
+          "name": "Workspaces",
           "type": "webview",
           "icon": "media/icon.svg",
-          "contextualTitle": "SpaceShift"
+          "contextualTitle": "Warpspace"
         }
       ]
     },
     "configuration": {
-      "title": "SpaceShift",
+      "title": "Warpspace",
       "properties": {
         "worksnap.autoResumeEnabled": {
           "type": "boolean",
@@ -146,29 +148,32 @@
   },
   "scripts": {
     "compile": "tsc -p tsconfig.json",
-    "watch": "tsc -w -p tsconfig.json",
-    "watch:tsc": "tsc -w -p tsconfig.json",
+    "check-types": "tsc -p tsconfig.json --noEmit",
+    "bundle": "node esbuild.js --production",
+    "watch": "npm-run-all -p watch:*",
+    "watch:tsc": "tsc -w -p tsconfig.json --noEmit",
     "watch:esbuild": "node esbuild.js --watch",
+    "lint": "eslint src",
     "pretest": "npm run compile",
     "test:unit": "npm run compile && node --test dist/test/utils.test.js",
-
+    "test": "npm run check-types && npm run lint && npm run test:unit",
     "verify": "node scripts/verify-package.js",
     "package": "npm run verify && vsce package",
     "publish": "npm run verify && vsce publish",
     "icon:svg2png": "inkscape media/icon.svg --export-type=png --export-filename=media/icon.png --export-width=128 --export-height=128",
     "icon:svg2png:magick": "magick convert media/icon.svg -resize 128x128 media/icon.png",
-    "icon:node": "node scripts/convert-icon.js",
     "dev": "npm run watch",
-    "vscode:prepublish": "npm run compile"
+    "vscode:prepublish": "npm run check-types && npm run lint && npm run bundle"
   },
   "icon": "media/icon.png",
   "devDependencies": {
-    "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "@types/vscode": "^1.107.0",
     "esbuild": "^0.27.2",
-    "sharp": "^0.32.0",
-    "typescript": "^5.9.3"
+    "eslint": "^9.15.0",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.15.0"
   },
   "dependencies": {
     "@vscode/codicons": "^0.0.44"

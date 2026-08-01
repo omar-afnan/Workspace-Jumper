@@ -8,6 +8,7 @@ on:
       - 'package.json'
       - 'src/**'
       - 'media/**'
+  workflow_dispatch:
 
 jobs:
   publish:
@@ -15,23 +16,51 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Compile TypeScript
-        run: npm run compile
+      - name: Type check
+        run: npm run check-types
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      # The marketplace rejects re-publishing an existing version, which
+      # previously failed this workflow on every push touching src/.
+      # Only continue when the package.json version actually changed.
+      - name: Check whether version changed
+        id: version
+        run: |
+          CURRENT=$(node -p "require('./package.json').version")
+          PREVIOUS=$(git show HEAD~1:package.json 2>/dev/null \
+            | node -p "try { JSON.parse(require('fs').readFileSync(0,'utf8')).version } catch (e) { '' }" \
+            || echo "")
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+          if [ "$CURRENT" = "$PREVIOUS" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Version unchanged ($CURRENT) - skipping publish."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Version changed: '$PREVIOUS' -> '$CURRENT'"
+          fi
 
       - name: Publish to VS Code Marketplace
+        if: steps.version.outputs.changed == 'true'
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
         run: |
           npm install -g @vscode/vsce
-          echo "Current version in package.json:"
-          node -p "require('./package.json').version"
-          vsce publish -p $VSCE_PAT --allow-star-activation --allow-missing-repository
+          echo "Publishing version ${{ steps.version.outputs.current }}"
+          vsce publish -p "$VSCE_PAT"

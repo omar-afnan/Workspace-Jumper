@@ -37,8 +37,18 @@ body {
 	letter-spacing: 0.3px;
 }
 
-.header h2 img {
+.header h2 img,
+.header h2 .app-icon {
 	flex-shrink: 0;
+	vertical-align: middle;
+	margin-right: 8px;
+	display: inline-block;
+}
+
+/* Was previously injected inline; must live here now that the webview CSP
+   disallows inline <style> blocks. */
+.sensitive-icon {
+	color: #f59e0b;
 }
 
 .header p {
@@ -118,6 +128,41 @@ body {
 	min-width: 0;
 	opacity: 0.75;
 	line-height: 1.4;
+}
+
+.path-unavailable {
+	font-style: italic;
+	opacity: 0.55;
+}
+
+/*  BROKEN / UNAVAILABLE ENTRIES  */
+.card-broken {
+	opacity: 0.7;
+	border-style: dashed;
+}
+
+.card-warning {
+	display: flex;
+	align-items: flex-start;
+	gap: 6px;
+	font-size: 10px;
+	line-height: 1.4;
+	color: #f59e0b;
+	margin-bottom: 10px;
+	padding-left: 22px;
+	word-wrap: break-word;
+	overflow-wrap: break-word;
+	min-width: 0;
+}
+
+.card-warning .codicon {
+	flex-shrink: 0;
+	font-size: 12px;
+}
+
+button[disabled] {
+	opacity: 0.5;
+	cursor: not-allowed;
 }
 
 /*  ACTION BUTTONS ROW  */

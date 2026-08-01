@@ -1,8 +1,18 @@
 .vscode/**
 .vscode-test/**
+.github/**
+.claude/**
+scripts/**
 out/**
+# `npm run compile` (tsc) also emits into dist/ for the unit tests. Only the
+# esbuild bundle is shipped; utils.js is already inlined into it.
+dist/test/**
+dist/utils.js
 node_modules/**
-!node_modules/@vscode/codicons/**
+# Only the two files the webview actually loads. Un-ignoring the whole codicons
+# package pulled in every source SVG and its CI config.
+!node_modules/@vscode/codicons/dist/codicon.css
+!node_modules/@vscode/codicons/dist/codicon.ttf
 src/**
 !media/**
 .gitignore
