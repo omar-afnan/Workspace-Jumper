@@ -14,6 +14,9 @@ node_modules/**
 !node_modules/@vscode/codicons/dist/codicon.css
 !node_modules/@vscode/codicons/dist/codicon.ttf
 src/**
+# Note: `!media/**` takes precedence over any later media/ exclusion, so
+# screenshots under media/screenshots/ do ship inside the .vsix. Keep them
+# small (a few hundred KB total) or move them out of media/ if that changes.
 !media/**
 .gitignore
 .yarnrc

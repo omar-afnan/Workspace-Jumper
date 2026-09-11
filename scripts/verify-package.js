@@ -22,10 +22,10 @@ try {
   // Check activation events
   if (!pkg.activationEvents || pkg.activationEvents.length === 0) {
     errors.push('❌ No activation events defined - extension won\'t activate!');
-  } else if (pkg.activationEvents.includes('onView:worksnap.sidebarView')) {
+  } else if (pkg.activationEvents.includes('onView:workspace-jumper.sidebarView')) {
     success.push('✅ Activation events include sidebar view');
   } else {
-    warnings.push('⚠️  Missing onView:worksnap.sidebarView activation event');
+    warnings.push('⚠️  Missing onView:workspace-jumper.sidebarView activation event');
   }
   
   // Check main entry point

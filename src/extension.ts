@@ -30,9 +30,8 @@ interface WorkspacePickItem extends vscode.QuickPickItem {
 // ─── CONSTANTS ─────────────────────────────────────────────────────────────────
 
 // User-facing product name. Storage keys, command ids and configuration keys
-// deliberately keep their original `workspace-jumper` / `worksnap` prefixes:
-// they are part of the published contract and renaming them would silently
-// discard existing users' history, settings and keybindings.
+// deliberately keep their `workspace-jumper` prefix for consistency across
+// the extension. This ensures settings and keybindings remain stable.
 const APP_NAME = 'Warpspace';
 
 const STORAGE_KEY = 'workspace-jumper.workspaces';
@@ -60,7 +59,7 @@ async function getEncryptionKey(secrets: vscode.SecretStorage): Promise<string> 
 // ─── CONFIG ────────────────────────────────────────────────────────────────────
 
 function getConfig(): WorkspaceConfig {
-	const config = vscode.workspace.getConfiguration('worksnap');
+	const config = vscode.workspace.getConfiguration('workspace-jumper');
 	return {
 		autoResumeEnabled: config.get<boolean>('autoResumeEnabled', true),
 		maxHistory: config.get<number>('maxHistory', MAX_HISTORY)
@@ -130,6 +129,9 @@ function getDashboardHtml(
 	const appIconUri = webview.asWebviewUri(
 		vscode.Uri.joinPath(context.extensionUri, 'media', 'icon.svg')
 	);
+	const heroImageUri = webview.asWebviewUri(
+		vscode.Uri.joinPath(context.extensionUri, 'media', 'img.png')
+	);
 
 	const nonce = generateNonce();
 	const csp = [
@@ -142,8 +144,10 @@ function getDashboardHtml(
 
 	const emptyState = `
 		<div class="empty-state">
+			<img src="${heroImageUri}" alt="Workspace Jumper" class="hero-image" />
 			<div class="codicon codicon-folder-opened"></div>
 			<p>No workspaces saved yet.</p>
+			<p class="hint">Open a workspace and click "Add Current Workspace" to get started.</p>
 		</div>`;
 
 	return `<!DOCTYPE html>
@@ -374,7 +378,7 @@ async function openDashboard(context: vscode.ExtensionContext): Promise<void> {
 	}
 
 	const panel = vscode.window.createWebviewPanel(
-		'worksnapDashboard',
+		'workspaceJumperDashboard',
 		APP_NAME,
 		vscode.ViewColumn.One,
 		{
@@ -448,19 +452,19 @@ export function activate(context: vscode.ExtensionContext): void {
 			}
 		}),
 		vscode.commands.registerCommand('workspace-jumper.toggleSensitive', () => toggleCurrentWorkspaceSensitive(context, secrets)),
-		vscode.commands.registerCommand('worksnap.openDashboard', () => openDashboard(context)),
-		vscode.commands.registerCommand('worksnap.openSidebar', async () => {
+		vscode.commands.registerCommand('workspace-jumper.openDashboard', () => openDashboard(context)),
+		vscode.commands.registerCommand('workspace-jumper.openSidebar', async () => {
 			try {
-				await vscode.commands.executeCommand('workbench.view.extension.worksnap');
+				await vscode.commands.executeCommand('workbench.view.extension.workspace-jumper');
 			} catch {
-				await vscode.commands.executeCommand('workbench.action.openView', 'worksnap.sidebarView');
+				await vscode.commands.executeCommand('workbench.action.openView', 'workspace-jumper.sidebarView');
 			}
 		})
 	);
 
 	const provider = new WarpspaceViewProvider(context);
 	context.subscriptions.push(
-		vscode.window.registerWebviewViewProvider('worksnap.sidebarView', provider, {
+		vscode.window.registerWebviewViewProvider('workspace-jumper.sidebarView', provider, {
 			webviewOptions: { retainContextWhenHidden: true }
 		}),
 		workspaceHistoryChanged

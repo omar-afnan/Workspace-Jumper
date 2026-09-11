@@ -9,6 +9,10 @@
     "type": "git",
     "url": "https://github.com/omar-afnan/workspace-jumper"
   },
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
   "engines": {
     "vscode": "^1.107.0"
   },
@@ -29,7 +33,7 @@
     "quick switch"
   ],
   "activationEvents": [
-    "onView:worksnap.sidebarView",
+    "onView:workspace-jumper.sidebarView",
     "onStartupFinished"
   ],
   "main": "./dist/extension.js",
@@ -61,7 +65,7 @@
         "category": "Warpspace"
       },
       {
-        "command": "worksnap.openDashboard",
+        "command": "workspace-jumper.openDashboard",
         "title": "Open Dashboard",
         "category": "Warpspace"
       }
@@ -69,16 +73,16 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "worksnap",
+          "id": "workspace-jumper",
           "title": "Warpspace",
           "icon": "media/icon.svg"
         }
       ]
     },
     "views": {
-      "worksnap": [
+      "workspace-jumper": [
         {
-          "id": "worksnap.sidebarView",
+          "id": "workspace-jumper.sidebarView",
           "name": "Workspaces",
           "type": "webview",
           "icon": "media/icon.svg",
@@ -89,12 +93,12 @@
     "configuration": {
       "title": "Warpspace",
       "properties": {
-        "worksnap.autoResumeEnabled": {
+        "workspace-jumper.autoResumeEnabled": {
           "type": "boolean",
           "default": true,
           "description": "Automatically resume the last workspace when VS Code opens without a folder"
         },
-        "worksnap.maxHistory": {
+        "workspace-jumper.maxHistory": {
           "type": "number",
           "default": 10,
           "minimum": 1,
