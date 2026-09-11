@@ -109,10 +109,10 @@ You can also install Workspace Jumper manually using a `.vsix` package.
 
 Workspace Jumper keeps configuration simple.
 
-| Setting                      | Default | Description                                                                 |
-| ---------------------------- | ------: | --------------------------------------------------------------------------- |
-| `worksnap.autoResumeEnabled` |  `true` | Automatically resume the last workspace when VS Code opens without a folder |
-| `worksnap.maxHistory`        |    `10` | Maximum number of workspaces stored in history, from 1 to 50                |
+| Setting                              | Default | Description                                                                 |
+| ------------------------------------ | ------: | --------------------------------------------------------------------------- |
+| `workspace-jumper.autoResumeEnabled` |  `true` | Automatically resume the last workspace when VS Code opens without a folder |
+| `workspace-jumper.maxHistory`        |    `10` | Maximum number of workspaces stored in history, from 1 to 50                |
 
 ### Existing Configuration
 
