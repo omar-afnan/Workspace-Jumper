@@ -1,6 +1,6 @@
 {
   "name": "workspace-jumper",
-  "displayName": "Warpspace",
+  "displayName": "Workspace Jumper",
   "description": "A privacy first VS Code workspace manager. Warp between projects instantly with AES-256-GCM encrypted history, auto-resume sessions, and full offline functionality. No tracking, no telemetry.",
   "version": "1.3.2",
   "publisher": "omara",
