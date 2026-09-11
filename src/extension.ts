@@ -32,7 +32,7 @@ interface WorkspacePickItem extends vscode.QuickPickItem {
 // User-facing product name. Storage keys, command ids and configuration keys
 // deliberately keep their `workspace-jumper` prefix for consistency across
 // the extension. This ensures settings and keybindings remain stable.
-const APP_NAME = 'Warpspace';
+const APP_NAME = 'Workspace Jumper';
 
 const STORAGE_KEY = 'workspace-jumper.workspaces';
 const ENCRYPTION_KEY_ID = 'workspace-jumper.encryptionKey';

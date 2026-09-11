@@ -1,6 +1,6 @@
 {
   "name": "workspace-jumper",
-  "displayName": "workspace-jumper",
+  "displayName": "Warpspace",
   "description": "A privacy first VS Code workspace manager. Warp between projects instantly with AES-256-GCM encrypted history, auto-resume sessions, and full offline functionality. No tracking, no telemetry.",
   "version": "1.3.1",
   "publisher": "omara",
@@ -42,39 +42,39 @@
       {
         "command": "workspace-jumper.jump",
         "title": "Jump to Workspace",
-        "category": "Warpspace"
+        "category": "Workspace Jumper"
       },
       {
         "command": "workspace-jumper.editWorkspace",
         "title": "Edit Workspace (Nickname/Sensitive)",
-        "category": "Warpspace"
+        "category": "Workspace Jumper"
       },
       {
         "command": "workspace-jumper.removeWorkspace",
         "title": "Remove Workspace from History",
-        "category": "Warpspace"
+        "category": "Workspace Jumper"
       },
       {
         "command": "workspace-jumper.clearHistory",
         "title": "Clear All Workspace History",
-        "category": "Warpspace"
+        "category": "Workspace Jumper"
       },
       {
         "command": "workspace-jumper.toggleSensitive",
         "title": "Toggle Sensitive Flag on Current Workspace",
-        "category": "Warpspace"
+        "category": "Workspace Jumper"
       },
       {
         "command": "workspace-jumper.openDashboard",
         "title": "Open Dashboard",
-        "category": "Warpspace"
+        "category": "Workspace Jumper"
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
           "id": "workspace-jumper",
-          "title": "Warpspace",
+          "title": "Workspace Jumper",
           "icon": "media/icon.svg"
         }
       ]
@@ -86,12 +86,12 @@
           "name": "Workspaces",
           "type": "webview",
           "icon": "media/icon.svg",
-          "contextualTitle": "Warpspace"
+          "contextualTitle": "Workspace Jumper"
         }
       ]
     },
     "configuration": {
-      "title": "Warpspace",
+      "title": "Workspace Jumper",
       "properties": {
         "workspace-jumper.autoResumeEnabled": {
           "type": "boolean",
