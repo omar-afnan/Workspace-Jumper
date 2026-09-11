@@ -8,6 +8,12 @@ Workspace Jumper is a lightweight VS Code extension designed for developers who 
 
 Everything is **local and offline-first**. There is no tracking, telemetry, or network communication.
 
+## 🎬 Demo
+
+See Workspace Jumper in action:
+
+![Workspace Jumper Demo](media/demo.gif)
+
 ## ✨ Features
 
 ### ⚡ Quick Workspace Switching
