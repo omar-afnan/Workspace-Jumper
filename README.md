@@ -2,7 +2,6 @@
 
 **Jump between your VS Code workspaces without digging through folders.**
 
-![Workspace Jumper](media/img.png)
 
 Workspace Jumper is a lightweight VS Code extension designed for developers who work across multiple projects. Save your workspaces, switch between them instantly, and automatically resume where you left off.
 
